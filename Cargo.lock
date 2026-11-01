@@ -534,7 +534,6 @@ dependencies = [
 name = "fleet-crypto"
 version = "0.1.0"
 dependencies = [
- "fleet-model",
  "rand 0.10.3",
  "rcgen",
  "thiserror",

@@ -5,7 +5,6 @@ edition.workspace = true
 publish.workspace = true
 
 [dependencies]
-fleet-model = { version = "0.1.0", path = "../model" }
 rcgen = "0.14.10"
 thiserror = "2.0.21"
 rand = "0.10.3"
