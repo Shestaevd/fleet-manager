@@ -5,6 +5,7 @@
 /crates/agent/protocol
 /crates/agent/receiver
 /CLAUDE.md
+.idea
 
 # secrets: certificates, private keys and the token
 *.pem
