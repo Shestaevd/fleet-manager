@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<module type="EMPTY_MODULE" version="4">
+  <component name="NewModuleRootManager">
+    <content url="file://$MODULE_DIR$/../Fleet">
+      <sourceFolder url="file://$MODULE_DIR$/../Fleet/crates/agent/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/../Fleet/crates/client/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/../Fleet/crates/config/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/../Fleet/crates/crypto/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/../Fleet/crates/dummy-receiver/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/../Fleet/crates/model/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/../Fleet/crates/protocol/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/../Fleet/crates/receiver/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/../Fleet/src" isTestSource="false" />
+      <excludeFolder url="file://$MODULE_DIR$/../Fleet/target" />
+    </content>
+    <orderEntry type="inheritedJdk" />
+    <orderEntry type="sourceFolder" forTests="false" />
+  </component>
+</module>

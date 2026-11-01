@@ -1,0 +1,14 @@
+/target
+/crates/agent/target
+/crates/agent/client
+/crates/agent/crypto
+/crates/agent/protocol
+/crates/agent/receiver
+/CLAUDE.md
+
+# secrets: certificates, private keys and the token
+*.pem
+*.pem.old
+*.key
+*.key.old
+token.txt

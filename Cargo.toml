@@ -1,0 +1,8 @@
+[workspace]
+resolver = "3"
+members = ["crates/agent", "crates/receiver", "crates/client", "crates/protocol", "crates/crypto", "crates/model", "crates/config"]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2024"
+publish = false
