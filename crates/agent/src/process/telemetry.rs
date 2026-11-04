@@ -1,4 +1,4 @@
-use std::time::{SystemTime, UNIX_EPOCH};
+use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 use sysinfo::{LoadAvg, System};
 
@@ -10,11 +10,10 @@ pub fn collect_telemetry(system: &mut System) -> Telemetry {
 
     let load: LoadAvg = System::load_average();
     Telemetry {
-        timestamp_secs: SystemTime::now()
+        timestamp: SystemTime::now()
             .duration_since(UNIX_EPOCH)
-            .map(|elapsed| elapsed.as_secs())
             .unwrap_or_default(),
-        uptime_secs: System::uptime(),
+        uptime: Duration::from_secs(System::uptime()),
         cpu_cores: system.cpus().len() as u32,
         cpu_usage_percent: system.global_cpu_usage(),
         cpu_core_usage_percent: system.cpus().iter().map(|cpu| cpu.cpu_usage()).collect(),

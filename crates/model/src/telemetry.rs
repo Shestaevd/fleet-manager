@@ -1,7 +1,9 @@
+use std::time::Duration;
+
 #[derive(Debug, Clone, PartialEq)]
 pub struct Telemetry {
-    pub timestamp_secs: u64,
-    pub uptime_secs: u64,
+    pub timestamp: Duration,
+    pub uptime: Duration,
     pub cpu_cores: u32,
     pub cpu_usage_percent: f32,
     pub cpu_core_usage_percent: Vec<f32>,

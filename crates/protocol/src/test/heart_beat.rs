@@ -1,3 +1,5 @@
+use std::time::Duration;
+
 use fleet_model::{AgentId, RequestId};
 
 use crate::agent_receiver::HeartBeatMessage;
@@ -8,8 +10,8 @@ fn sample() -> HeartBeatMessage {
     HeartBeatMessage {
         agent_id: AgentId::new(),
         package_id: RequestId::new(),
-        timestamp_secs: 1_700_000_000,
-        uptime_secs: 3600,
+        timestamp: Duration::from_secs(1_700_000_000),
+        uptime: Duration::from_secs(3600),
         cpu_cores: 4,
         cpu_usage_percent: 12.5,
         cpu_core_usage_percent: vec![10.0, 15.0, 5.0, 20.0],

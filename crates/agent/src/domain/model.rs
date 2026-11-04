@@ -28,8 +28,8 @@ impl IntoHeartBeat for Telemetry {
         HeartBeatMessage {
             agent_id,
             package_id: RequestId::new(),
-            timestamp_secs: self.timestamp_secs,
-            uptime_secs: self.uptime_secs,
+            timestamp: self.timestamp,
+            uptime: self.uptime,
             cpu_cores: self.cpu_cores,
             cpu_usage_percent: self.cpu_usage_percent,
             cpu_core_usage_percent: self.cpu_core_usage_percent,

@@ -16,7 +16,7 @@ where
     W: AsyncWrite + Unpin + Send + 'static,
 {
     tokio::spawn(async move {
-        let period: Duration = shared.config.heart_beat_interval();
+        let period: Duration = shared.config.heart_beat_interval;
         let mut system: System = System::new();
         let mut ticker: Interval = interval_at(Instant::now(), period);
         loop {

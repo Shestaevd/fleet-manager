@@ -14,7 +14,7 @@ pub fn fs_scan_process(
 ) -> JoinHandle<()> {
     tokio::spawn(async move {
         let depth: u8 = shared.config.scan_depth;
-        let mut ticker: Interval = interval(shared.config.watch_interval());
+        let mut ticker: Interval = interval(shared.config.watch_interval);
         ticker.set_missed_tick_behavior(MissedTickBehavior::Skip);
 
         loop {
