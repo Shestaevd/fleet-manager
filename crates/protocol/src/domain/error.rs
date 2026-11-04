@@ -1,12 +1,9 @@
 use thiserror::Error;
-use fleet_crypto::TOKEN_BYTE_SIZE;
 
 #[derive(Debug, Error)]
 pub enum ProtocolError {
     #[error("packet is empty, expected a message type byte")]
     EmptyPacket,
-    #[error("token byte size must be {}", TOKEN_BYTE_SIZE)]
-    WrongTokenSize,
     #[error("packet is larger than the 4-byte length prefix can describe")]
     PacketTooLarge,
     #[error("unknown message type byte 0x{0:02X}")]

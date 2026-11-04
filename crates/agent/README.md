@@ -5,10 +5,9 @@ receiver over TLS and reports on the machine it runs on.
 
 ## How it runs
 
-1. **Start-up.** The agent reads three files that sit next to the binary for now:
+1. **Start-up.** The agent reads two files that sit next to the binary for now:
    - `agent.toml`: settings. If it is missing, a default one is created with a fresh `agent_id`; set `receiver_url`.
    - `host.pem`: the receiver's certificate, pinned as the only trusted one.
-   - `token.txt`: the agent's token. Will be moved to the more secure space maybe as part of KV vault.
 2. **Connecting** (`tcp/connector.rs`). A background task opens a TCP connection to `receiver`, does the TLS
    handshake, and splits the stream into a read half and a shared, locked write half. Failed connects are retried
    with exponential backoff and jitter behind a circuit breaker. All of it is configured in `agent.toml`.

@@ -7,4 +7,3 @@ publish.workspace = true
 [dependencies]
 rcgen = "0.14.10"
 thiserror = "2.0.21"
-rand = "0.10.3"

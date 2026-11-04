@@ -7,9 +7,8 @@
 /CLAUDE.md
 .idea
 
-# secrets: certificates, private keys and the token
+# secrets: certificates and private keys
 *.pem
 *.pem.old
 *.key
 *.key.old
-token.txt

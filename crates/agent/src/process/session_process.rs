@@ -24,7 +24,7 @@ where
 
             let heart_beat: HeartBeatMessage =
                 collect_telemetry(&mut system).into_heart_beat(shared.config.agent_id);
-            let bytes: Vec<u8> = match heart_beat.encode(&shared.token.content) {
+            let bytes: Vec<u8> = match heart_beat.encode() {
                 Ok(bytes) => bytes,
                 Err(err) => {
                     tracing::error!("can not encode heart beat, continuing: {err}");

@@ -1,11 +1,11 @@
 use crate::domain::config::{AgentConfig, CONFIG_FILE_NAME, default_config};
 use crate::domain::model::{FileMetaWindow, Shared};
-use crate::fs::fs_io::{file_meta_of, fs_home, read_pem, read_token};
+use crate::fs::fs_io::{file_meta_of, fs_home, read_pem};
 use crate::process::fs_scan_process::fs_scan_process;
 use crate::process::session_process::session_process;
 use crate::tcp::connector;
 use fleet_config::read_config_or_create;
-use fleet_crypto::{Secret, validate_token};
+use fleet_crypto::Secret;
 use std::sync::{Arc, RwLock};
 use tokio::task::JoinHandle;
 
@@ -34,11 +34,8 @@ async fn main() {
     tracing::info!("receiver: {}", config.receiver_url);
 
     let certificate: Vec<u8> = read_pem().expect("can not read host.pem");
-    let token: Vec<u8> = read_token().expect("can not read token file").trim_ascii().to_vec();
-    validate_token(&token).expect("token file does not hold a valid token");
     let shared: Arc<Shared> = Arc::new(Shared {
         certificate: Secret { content: certificate },
-        token: Secret { content: token },
         config,
     });
 

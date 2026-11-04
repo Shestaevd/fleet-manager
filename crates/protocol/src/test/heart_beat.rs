@@ -35,12 +35,12 @@ fn garbage_bytes_are_a_parse_error() {
 }
 
 #[test]
-fn encoded_packet_starts_with_length_then_message_type_and_token() {
-    let token: Vec<u8> = fleet_crypto::generate_secure_token();
-    let encoded = sample().encode(&token).unwrap();
+fn encoded_packet_is_length_then_message_type_then_payload() {
+    let message = sample();
+    let encoded = message.encode().unwrap();
 
     let len = u32::from_be_bytes(encoded[..4].try_into().unwrap()) as usize;
     assert_eq!(len, encoded.len() - 4);
     assert_eq!(encoded[4], 0xF0);
-    assert!(len > 1 + fleet_crypto::TOKEN_BYTE_SIZE);
+    assert_eq!(HeartBeatMessage::try_from(encoded[5..].to_vec()).unwrap(), message);
 }

@@ -8,18 +8,16 @@ Wire protocol shared by the agent, the receiver and the client. The two links ha
 ## Packet format
 
 ```
-[ 4 bytes length ][ 1 byte message type ][ token ][ payload ]
+[ 4 bytes length ][ 1 byte message type ][ payload ]
 ```
 
 | Part | Size | Notes |
 |---|---|---|
-| length | 4 bytes | big-endian; counts everything after it (type, token and payload)|
+| length | 4 bytes | big-endian; counts everything after it (type and payload)|
 | message type | 1 byte | identifies the message, see the table below |
-| token | `TOKEN_BYTE_SIZE` bytes | the agent's token, validated before sending. The size is a compile-time constant in `fleet-crypto`, so both sides must be built with the same value |
 | payload | the rest | the message serialized with `postcard` |
 
-`Package::encode` builds this layout. The token size is not sent, so a mismatch between the two sides shows up as a
-decoding error, because the payload is read from the wrong offset.
+`Package::encode` builds this layout.
 
 ## Message types (`agent_receiver`)
 

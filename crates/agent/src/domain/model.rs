@@ -19,7 +19,6 @@ pub enum FileKind {
 
 pub struct Shared {
     pub certificate: Secret,
-    pub token: Secret,
     pub config: AgentConfig,
 }
 

@@ -22,12 +22,6 @@ pub fn read_pem() -> Result<Vec<u8>, FsError> {
     read_file(executable_path.join("host.pem"))
 }
 
-// will be redone as part of better token handling, for now a part of mvp
-pub fn read_token() -> Result<Vec<u8>, FsError> {
-    let executable_path: PathBuf = get_executable_path()?;
-    read_file(executable_path.join("token.txt"))
-}
-
 fn fs_read_with_depth(
     dir: PathBuf,
     current_depth: u8,

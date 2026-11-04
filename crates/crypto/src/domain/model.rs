@@ -1,6 +1,6 @@
 use std::fmt::{Debug, Display, Formatter};
 
-/// Secret bytes (a token, a certificate or a key)
+/// Secret bytes (a certificate or a key)
 pub struct Secret {
     pub content: Vec<u8>,
 }
