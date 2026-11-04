@@ -2,7 +2,7 @@ use std::time::{SystemTime, UNIX_EPOCH};
 
 use sysinfo::{LoadAvg, System};
 
-use crate::domain::model::Telemetry;
+use fleet_model::Telemetry;
 
 pub fn collect_telemetry(system: &mut System) -> Telemetry {
     system.refresh_cpu_usage();

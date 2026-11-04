@@ -4,7 +4,8 @@ use std::sync::{Arc, RwLock};
 use tokio::task::JoinHandle;
 use tokio::time::{Interval, MissedTickBehavior, interval};
 
-use crate::domain::model::{FileMeta, FileMetaWindow, Shared};
+use crate::domain::model::{FileMetaWindow, Shared};
+use fleet_model::FileMeta;
 use crate::fs::fs_io::fs_scan;
 
 pub fn fs_scan_process(

@@ -1,7 +1,7 @@
 use std::sync::Arc;
 use std::time::Duration;
 
-use crate::domain::model::Shared;
+use crate::domain::model::{IntoHeartBeat, Shared};
 use crate::process::telemetry::collect_telemetry;
 use fleet_protocol::agent_receiver::HeartBeatMessage;
 use fleet_protocol::protocol::Package;

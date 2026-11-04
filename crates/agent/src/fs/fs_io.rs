@@ -1,4 +1,4 @@
-use crate::domain::model::{FileKind, FileMeta};
+use fleet_model::{FileKind, FileMeta};
 use fleet_model::error::FsError;
 use std::path::PathBuf;
 use std::{env, fs};

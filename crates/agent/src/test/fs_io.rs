@@ -4,7 +4,7 @@ use std::path::{Path, PathBuf};
 
 use fleet_model::error::FsError;
 
-use crate::domain::model::{FileKind, FileMeta};
+use fleet_model::{FileKind, FileMeta};
 use crate::fs::fs_io::{file_meta_of, fs_home, fs_root, fs_scan};
 
 fn project_root() -> PathBuf {

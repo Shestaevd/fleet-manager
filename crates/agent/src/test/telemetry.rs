@@ -1,7 +1,8 @@
 use fleet_model::AgentId;
 use sysinfo::System;
 
-use crate::domain::model::Telemetry;
+use crate::domain::model::IntoHeartBeat;
+use fleet_model::Telemetry;
 use crate::process::telemetry::collect_telemetry;
 
 #[test]
