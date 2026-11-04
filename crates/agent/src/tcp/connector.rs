@@ -53,7 +53,7 @@ where
     let breaker: StateMachine<ConsecutiveFailures<Constant>, ()> = BreakerConfig::new()
         .failure_policy(failure_policy::consecutive_failures(
             config.breaker_failure_threshold,
-            breaker_backoff::constant(config.breaker_open_for()),
+            breaker_backoff::constant(config.breaker_open_for),
         ))
         .build();
     
@@ -62,8 +62,8 @@ where
 
     loop {
         let strategy = ExponentialBackoff::from_millis(multiplier)
-            .factor((config.backoff_min().as_millis() as u64 / multiplier).max(1))
-            .max_delay(config.backoff_max())
+            .factor((config.backoff_min.as_millis() as u64 / multiplier).max(1))
+            .max_delay(config.backoff_max)
             .map(jitter)
             .take(config.connect_max_retries.map_or(usize::MAX, |retries| retries as usize));
 
@@ -123,7 +123,7 @@ async fn connect(
         .port()
         .ok_or_else(|| io::Error::new(io::ErrorKind::InvalidInput, "receiver_url has no port"))?;
 
-    let tcp: TcpStream = timeout(config.connect_timeout(), TcpStream::connect((host, port)))
+    let tcp: TcpStream = timeout(config.connect_timeout, TcpStream::connect((host, port)))
         .await
         .map_err(|_| io::Error::new(io::ErrorKind::TimedOut, "tcp connect timed out"))??;
 
@@ -132,7 +132,7 @@ async fn connect(
     let server_name: ServerName<'static> = ServerName::try_from(host.to_owned())
         .map_err(|e| io::Error::new(io::ErrorKind::InvalidInput, e))?;
     timeout(
-        config.handshake_timeout(),
+        config.handshake_timeout,
         connector.connect(server_name, tcp),
     )
     .await

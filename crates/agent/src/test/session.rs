@@ -13,7 +13,7 @@ use crate::process::session_process::heart_beat_process;
 
 fn shared() -> Arc<Shared> {
     let config: AgentConfig = toml::from_str(
-        "agent_id = \"9d3b8f9e-6f2a-4c1e-9a55-2c7f0a1b3d44\"\nreceiver_url = \"tls://127.0.0.1:7000\"\nheart_beat_interval_ms = 30\n",
+        "agent_id = \"9d3b8f9e-6f2a-4c1e-9a55-2c7f0a1b3d44\"\nreceiver_url = \"tls://127.0.0.1:7000\"\nheart_beat_interval = 30\n",
     )
     .unwrap();
     Arc::new(Shared {

@@ -1,3 +1,5 @@
+use std::time::Duration;
+
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 use fleet_model::{AgentId, RequestId};
@@ -14,8 +16,8 @@ trait AgentReceiverPackage : Package {
 pub struct HeartBeatMessage {
     pub agent_id: AgentId,
     pub package_id: RequestId,
-    pub timestamp_secs: u64,
-    pub uptime_secs: u64,
+    pub timestamp: Duration,
+    pub uptime: Duration,
     pub cpu_cores: u32,
     pub cpu_usage_percent: f32,
     pub cpu_core_usage_percent: Vec<f32>,

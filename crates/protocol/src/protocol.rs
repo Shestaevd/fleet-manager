@@ -15,10 +15,6 @@ where Self: TryFrom<Vec<u8>> + Into<Vec<u8>> + Clone + Sized {
         bytes.extend_from_slice(&len.to_be_bytes());
         bytes.push(self.message_type());
         bytes.extend(&serialized);
-        println!("4 bytes value {:?}", &len);
-        println!("message type {:?}", self.message_type());
-        println!("message size: {:?}", &serialized.len());
-        println!("full length {:?}", &bytes.len());
         Ok(bytes)
     }
 }

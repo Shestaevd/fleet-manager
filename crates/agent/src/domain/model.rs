@@ -1,4 +1,5 @@
 use std::fmt::Debug;
+use std::time::Duration;
 use std::path::PathBuf;
 use std::time::SystemTime;
 
@@ -43,8 +44,8 @@ pub struct FileMetaWindow {
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Telemetry {
-    pub timestamp_secs: u64,
-    pub uptime_secs: u64,
+    pub timestamp: Duration,
+    pub uptime: Duration,
     pub cpu_cores: u32,
     pub cpu_usage_percent: f32,
     pub cpu_core_usage_percent: Vec<f32>,
@@ -58,8 +59,8 @@ impl Telemetry {
         HeartBeatMessage {
             agent_id,
             package_id: RequestId::new(),
-            timestamp_secs: self.timestamp_secs,
-            uptime_secs: self.uptime_secs,
+            timestamp: self.timestamp,
+            uptime: self.uptime,
             cpu_cores: self.cpu_cores,
             cpu_usage_percent: self.cpu_usage_percent,
             cpu_core_usage_percent: self.cpu_core_usage_percent,

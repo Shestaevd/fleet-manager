@@ -12,10 +12,10 @@ receiver over TLS and reports on the machine it runs on.
    handshake, and splits the stream into a read half and a shared, locked write half. Failed connects are retried
    with exponential backoff and jitter behind a circuit breaker. All of it is configured in `agent.toml`.
 3. **Session** (`process/session_process.rs`). Once connected, a heartbeat task sends a packet every
-   `heart_beat_interval_ms` with the agent id, CPU (overall and per core), load average, memory and uptime.
+   `heart_beat_interval` with the agent id, CPU (overall and per core), load average, memory and uptime.
    If the stream breaks, the task ends and the connector reconnects.
 4. **File overwatch** (`process/fs_scan_process.rs`). Another task rescans a directory (the home directory by
-   default) every `watch_interval_ms`, down to `scan_depth` levels, and keeps the result in a shared window.
+   default) every `watch_interval`, down to `scan_depth` levels, and keeps the result in a shared window.
    It skips unreadable entries and does not follow symlinks into directories.
 
 ## Packets
