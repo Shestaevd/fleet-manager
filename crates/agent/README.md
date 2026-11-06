@@ -8,15 +8,23 @@ receiver over TLS and reports on the machine it runs on.
 1. **Start-up.** The agent reads two files that sit next to the binary for now:
    - `agent.toml`: settings. If it is missing, a default one is created with a fresh `agent_id`; set `receiver_url`.
    - `host.pem`: the receiver's certificate, pinned as the only trusted one.
-2. **Connecting** (`tcp/connector.rs`). A background task opens a TCP connection to `receiver`, does the TLS
-   handshake, and splits the stream into a read half and a shared, locked write half. Failed connects are retried
+
+   It keeps two more files there itself: `.token.txt`, the hash of its token (written owner-only; the agent never
+   holds the token itself), and `.probation`, an empty marker that means "registration was sent, waiting for a decision".
+2. **Connecting** (`tcp/connector.rs`). A background task opens a TCP connection to `receiver_url`, does the TLS
+   handshake, and splits the stream into a shared, locked read half and write half. Failed connects are retried
    with exponential backoff and jitter behind a circuit breaker. All of it is configured in `agent.toml`.
-3. **Session** (`process/session_process.rs`). Once connected, a heartbeat task sends a packet every
-   `heart_beat_interval` with the agent id, CPU (overall and per core), load average, memory and uptime.
+   Every new connection runs a session: registration first, then the working session.
+3. **Registration** (`registration_process`). If `.token.txt` exists the agent is registered and this step ends at once.
+   Otherwise it sends `Registration` (unless `.probation` already exists) and waits: `RegistrationProbation` creates
+   `.probation`; `RegistrationAccepted` carries the token hash, which is saved to `.token.txt` before `.probation`
+   is removed and `RegistrationFinished` (with that token hash as proof) is sent to the receiver.
+4. **Session** (`process/session_process.rs`). A heartbeat task sends a packet every `heart_beat_interval` with the
+   agent id, CPU (overall and per core), load average, memory and uptime, carrying the token hash.
    If the stream breaks, the task ends and the connector reconnects.
-4. **File overwatch** (`process/fs_scan_process.rs`). Another task rescans a directory (the home directory by
-   default) every `watch_interval`, down to `scan_depth` levels, and keeps the result in a shared window.
-   It skips unreadable entries and does not follow symlinks into directories.
+5. **File overwatch** (`process/fs_scan_process.rs`). Another task, started with each session, rescans a directory
+   (the home directory by default) every `watch_interval`, down to `scan_depth` levels, and keeps the result in a
+   shared window. It skips unreadable entries and does not follow symlinks into directories.
 
 ## Packets
 

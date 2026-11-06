@@ -19,35 +19,35 @@ use tokio_rustls::client::TlsStream;
 use url::Url;
 
 use crate::domain::config::AgentConfig;
-use crate::domain::model::Shared;
+use fleet_crypto::Secret;
 
-pub fn run<F, Fut>(state: Arc<Shared>, session: F) -> JoinHandle<io::Result<()>>
+pub fn run<F, Fut>(config: AgentConfig, certificate: Secret, session: F) -> JoinHandle<io::Result<()>>
 where
     F: Fn(
-            Arc<Shared>,
-            Arc<ReadHalf<TlsStream<TcpStream>>>,
+            AgentConfig,
+            Arc<Mutex<ReadHalf<TlsStream<TcpStream>>>>,
             Arc<Mutex<WriteHalf<TlsStream<TcpStream>>>>,
         ) -> Fut
         + Send
         + 'static,
     Fut: Future<Output = Result<(), JoinError>> + Send + 'static,
 {
-    tokio::spawn(connection_loop(state, session))
+    tokio::spawn(connection_loop(config, certificate, session))
 }
 
-async fn connection_loop<F, Fut>(state: Arc<Shared>, session: F) -> io::Result<()>
+async fn connection_loop<F, Fut>(owned_config: AgentConfig, certificate: Secret, session: F) -> io::Result<()>
 where
     F: Fn(
-            Arc<Shared>,
-            Arc<ReadHalf<TlsStream<TcpStream>>>,
+            AgentConfig,
+            Arc<Mutex<ReadHalf<TlsStream<TcpStream>>>>,
             Arc<Mutex<WriteHalf<TlsStream<TcpStream>>>>,
         ) -> Fut
         + Send
         + 'static,
     Fut: Future<Output = Result<(), JoinError>>,
 {
-    let config: &AgentConfig = &state.config;
-    let connector: TlsConnector = tls_connector(&state)?;
+    let config: &AgentConfig = &owned_config;
+    let connector: TlsConnector = tls_connector(&certificate)?;
     let connector: &TlsConnector = &connector;
 
     let breaker: StateMachine<ConsecutiveFailures<Constant>, ()> = BreakerConfig::new()
@@ -87,18 +87,23 @@ where
         ) = tokio::io::split(stream);
 
         let write_stream = Arc::new(Mutex::new(write_stream));
-        let read_stream = Arc::new(read_stream);
+        let read_stream = Arc::new(Mutex::new(read_stream));
 
         tracing::info!("connected to {}", config.receiver_url);
-        if let Err(err) = session(state.clone(), read_stream, write_stream).await {
+        if let Err(err) = session(
+            owned_config.clone(),
+            read_stream,
+            write_stream,
+        )
+        .await {
             tracing::warn!("session ended unexpectedly: {err}");
         }
     }
 }
 
-fn tls_connector(state: &Shared) -> io::Result<TlsConnector> {
+fn tls_connector(certificate: &Secret) -> io::Result<TlsConnector> {
     let mut roots: RootCertStore = RootCertStore::empty();
-    for cert in rustls_pemfile::certs(&mut state.certificate.content.as_slice()) {
+    for cert in rustls_pemfile::certs(&mut certificate.content.as_slice()) {
         roots
             .add(cert?)
             .map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e))?;

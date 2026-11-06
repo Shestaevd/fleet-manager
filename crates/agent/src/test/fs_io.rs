@@ -14,9 +14,9 @@ fn project_root() -> PathBuf {
         .unwrap()
 }
 
-fn scan(dir: PathBuf) -> Vec<FileMeta> {
+async fn scan(dir: PathBuf) -> Vec<FileMeta> {
     let mut out = Vec::new();
-    fs_scan(dir, u8::MAX, &mut out).unwrap();
+    fs_scan(dir, u8::MAX, &mut out).await.unwrap();
     out
 }
 
@@ -43,19 +43,19 @@ impl Drop for TempDir {
     }
 }
 
-#[test]
-fn file_path_is_not_a_directory() {
+#[tokio::test]
+async fn file_path_is_not_a_directory() {
     let file = project_root().join("Cargo.toml");
     let mut out = Vec::new();
-    let r = fs_scan(file, u8::MAX, &mut out);
+    let r = fs_scan(file, u8::MAX, &mut out).await;
     assert!(matches!(r, Err(FsError::NotADirectory { .. })));
     assert!(out.is_empty());
 }
 
-#[test]
-fn scans_project_sources_recursively() {
+#[tokio::test]
+async fn scans_project_sources_recursively() {
     let root = project_root();
-    let entries = scan(root.join("crates/agent/src"));
+    let entries = scan(root.join("crates/agent/src")).await;
 
     assert_eq!(
         find(&entries, &root.join("crates/agent/src/main.rs")).kind,
@@ -71,10 +71,10 @@ fn scans_project_sources_recursively() {
     );
 }
 
-#[test]
-fn file_metadata_matches_filesystem() {
+#[tokio::test]
+async fn file_metadata_matches_filesystem() {
     let root = project_root();
-    let entries = scan(root.join("crates"));
+    let entries = scan(root.join("crates")).await;
     let manifest = root.join("crates/model/Cargo.toml");
     let meta = fs::metadata(&manifest).unwrap();
     let entry = find(&entries, &manifest);
@@ -87,29 +87,29 @@ fn file_metadata_matches_filesystem() {
     assert!(!entry.hidden);
 }
 
-#[test]
-fn dot_files_are_hidden() {
+#[tokio::test]
+async fn dot_files_are_hidden() {
     let tmp = TempDir::new("hidden");
     fs::write(tmp.0.join(".secret"), b"x").unwrap();
     fs::write(tmp.0.join("visible"), b"x").unwrap();
-    let entries = scan(tmp.0.clone());
+    let entries = scan(tmp.0.clone()).await;
 
     assert!(find(&entries, &tmp.0.join(".secret")).hidden);
     assert!(!find(&entries, &tmp.0.join("visible")).hidden);
 }
 
-fn scan_to_depth(dir: PathBuf, depth: u8) -> Vec<FileMeta> {
+async fn scan_to_depth(dir: PathBuf, depth: u8) -> Vec<FileMeta> {
     let mut out = Vec::new();
-    fs_scan(dir, depth, &mut out).unwrap();
+    fs_scan(dir, depth, &mut out).await.unwrap();
     out
 }
 
-#[test]
-fn depth_limits_nested_directories() {
+#[tokio::test]
+async fn depth_limits_nested_directories() {
     let tmp = TempDir::new("depth");
     fs::create_dir_all(tmp.0.join("a/b/c")).unwrap();
     fs::write(tmp.0.join("a/b/c/deep.txt"), b"x").unwrap();
-    let entries = scan_to_depth(tmp.0.clone(), 1);
+    let entries = scan_to_depth(tmp.0.clone(), 1).await;
 
     find(&entries, &tmp.0.join("a"));
     find(&entries, &tmp.0.join("a/b"));
@@ -119,18 +119,18 @@ fn depth_limits_nested_directories() {
             .any(|e| e.path == tmp.0.join("a/b/c"))
     );
 
-    let all = scan_to_depth(tmp.0.clone(), u8::MAX);
+    let all = scan_to_depth(tmp.0.clone(), u8::MAX).await;
     find(&all, &tmp.0.join("a/b/c/deep.txt"));
 }
 
-#[test]
-fn symlinked_directories_are_not_followed() {
+#[tokio::test]
+async fn symlinked_directories_are_not_followed() {
     let tmp = TempDir::new("loop");
     fs::create_dir_all(tmp.0.join("real")).unwrap();
     fs::write(tmp.0.join("real/file.txt"), b"x").unwrap();
     std::os::unix::fs::symlink(&tmp.0, tmp.0.join("real/loop")).unwrap();
     std::os::unix::fs::symlink(tmp.0.join("real"), tmp.0.join("alias")).unwrap();
-    let entries = scan(tmp.0.clone());
+    let entries = scan(tmp.0.clone()).await;
 
     assert_eq!(
         find(&entries, &tmp.0.join("real/loop")).kind,
@@ -148,8 +148,8 @@ fn symlinked_directories_are_not_followed() {
     assert_eq!(entries.iter().filter(|e| e.path != tmp.0 && e.path.starts_with(&tmp.0)).count(), 4);
 }
 
-#[test]
-fn scan_around_reads_children_and_parents_within_depth() {
+#[tokio::test]
+async fn scan_around_reads_children_and_parents_within_depth() {
     let tmp = TempDir::new("around");
     fs::create_dir_all(tmp.0.join("a/b/c/d")).unwrap();
     fs::write(tmp.0.join("a/b/c/d/deep.txt"), b"x").unwrap();
@@ -158,25 +158,25 @@ fn scan_around_reads_children_and_parents_within_depth() {
     let start = tmp.0.join("a/b/c");
 
     let mut one = Vec::new();
-    fs_scan(start.clone(), 1, &mut one).unwrap();
+    fs_scan(start.clone(), 1, &mut one).await.unwrap();
     find(&one, &tmp.0.join("a/b/c/d/deep.txt"));
     find(&one, &tmp.0.join("a/b/sibling.txt"));
     find(&one, &tmp.0.join("a/b/c"));
     assert!(!one.iter().any(|e| e.path.file_name().is_some_and(|n| n == "top.txt")));
 
     let mut two = Vec::new();
-    fs_scan(start, 2, &mut two).unwrap();
+    fs_scan(start, 2, &mut two).await.unwrap();
     find(&two, &tmp.0.join("a/top.txt"));
     assert_eq!(two.iter().filter(|e| e.path.file_name().is_some_and(|n| n == "deep.txt")).count(), 1);
 }
 
-#[test]
-fn fs_root_is_a_directory_with_dir_meta() {
+#[tokio::test]
+async fn fs_root_is_a_directory_with_dir_meta() {
     let root = fs_root();
     assert!(root.is_dir());
     assert_eq!(root, Path::new("/"));
-    assert_eq!(file_meta_of(root.clone()).unwrap().kind, FileKind::Dir);
-    assert_eq!(file_meta_of(root).unwrap().hidden, false);
+    assert_eq!(file_meta_of(root.clone()).await.unwrap().kind, FileKind::Dir);
+    assert_eq!(file_meta_of(root).await.unwrap().hidden, false);
 }
 
 #[test]
@@ -184,8 +184,8 @@ fn home_is_a_directory() {
     assert!(fs_home().is_dir());
 }
 
-#[test]
-fn unreadable_nested_directory_is_skipped() {
+#[tokio::test]
+async fn unreadable_nested_directory_is_skipped() {
     use std::os::unix::fs::PermissionsExt;
 
     let tmp = TempDir::new("unreadable");
@@ -195,7 +195,7 @@ fn unreadable_nested_directory_is_skipped() {
     fs::set_permissions(tmp.0.join("locked"), fs::Permissions::from_mode(0o000)).unwrap();
 
     let mut out = Vec::new();
-    let result = fs_scan(tmp.0.clone(), u8::MAX, &mut out);
+    let result = fs_scan(tmp.0.clone(), u8::MAX, &mut out).await;
     fs::set_permissions(tmp.0.join("locked"), fs::Permissions::from_mode(0o755)).unwrap();
 
     result.unwrap();

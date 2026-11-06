@@ -2,7 +2,7 @@ use std::time::Duration;
 
 use fleet_model::AgentId;
 use serde::Deserialize;
-use serde_with::{DurationMilliSeconds, DurationSeconds, serde_as};
+use serde_with::{DurationMilliSeconds, serde_as};
 use url::Url;
 
 #[serde_as]
@@ -10,16 +10,16 @@ use url::Url;
 pub struct AgentConfig {
     pub agent_id: AgentId,
     pub receiver_url: Url,
-    #[serde_as(as = "DurationSeconds<u64>")]
+    #[serde_as(as = "DurationMilliSeconds<u64>")]
     #[serde(default = "default_connect_timeout")]
     pub connect_timeout: Duration,
-    #[serde_as(as = "DurationSeconds<u64>")]
+    #[serde_as(as = "DurationMilliSeconds<u64>")]
     #[serde(default = "default_handshake_timeout")]
     pub handshake_timeout: Duration,
-    #[serde_as(as = "DurationSeconds<u64>")]
+    #[serde_as(as = "DurationMilliSeconds<u64>")]
     #[serde(default = "default_backoff_min")]
     pub backoff_min: Duration,
-    #[serde_as(as = "DurationSeconds<u64>")]
+    #[serde_as(as = "DurationMilliSeconds<u64>")]
     #[serde(default = "default_backoff_max")]
     pub backoff_max: Duration,
     #[serde(default = "default_backoff_multiplier")]
@@ -28,7 +28,7 @@ pub struct AgentConfig {
     pub connect_max_retries: Option<u32>,
     #[serde(default = "default_breaker_failure_threshold")]
     pub breaker_failure_threshold: u32,
-    #[serde_as(as = "DurationSeconds<u64>")]
+    #[serde_as(as = "DurationMilliSeconds<u64>")]
     #[serde(default = "default_breaker_open_for")]
     pub breaker_open_for: Duration,
     #[serde(default = "default_scan_depth")]
@@ -42,19 +42,19 @@ pub struct AgentConfig {
 }
 
 fn default_connect_timeout() -> Duration {
-    Duration::from_secs(10)
+    Duration::from_millis(10_000)
 }
 
 fn default_handshake_timeout() -> Duration {
-    Duration::from_secs(10)
+    Duration::from_millis(10_000)
 }
 
 fn default_backoff_min() -> Duration {
-    Duration::from_secs(1)
+    Duration::from_millis(1_000)
 }
 
 fn default_backoff_max() -> Duration {
-    Duration::from_secs(60)
+    Duration::from_millis(60_000)
 }
 
 fn default_backoff_multiplier() -> u64 {
@@ -66,7 +66,7 @@ fn default_breaker_failure_threshold() -> u32 {
 }
 
 fn default_breaker_open_for() -> Duration {
-    Duration::from_secs(30)
+    Duration::from_millis(30_000)
 }
 
 fn default_scan_depth() -> u8 {
@@ -74,11 +74,11 @@ fn default_scan_depth() -> u8 {
 }
 
 fn default_watch_interval() -> Duration {
-    Duration::from_millis(1000)
+    Duration::from_millis(1_000)
 }
 
 fn default_heart_beat_interval() -> Duration {
-    Duration::from_millis(1000)
+    Duration::from_millis(1_000)
 }
 
 pub const CONFIG_FILE_NAME: &str = "agent.toml";
@@ -91,22 +91,22 @@ agent_id = "{agent_id}"
 # I will replace it with a system variable in the future.
 receiver_url = "tls://127.0.0.1:7000"
 
-# Connection settings (seconds unless stated otherwise).
-connect_timeout = 10
-handshake_timeout = 10
-backoff_min = 1
-backoff_max = 60
+# Connection settings. Every duration is in milliseconds.
+connect_timeout = 10000
+handshake_timeout = 10000
+backoff_min = 1000
+backoff_max = 60000
 backoff_multiplier = 2
 # Retries after a failed connect before the agent gives up. Leave commented out to retry forever.
 # connect_max_retries = 10
 breaker_failure_threshold = 5
-breaker_open_for = 30
+breaker_open_for = 30000
 
-# Filesystem overwatch: how many levels to scan and how often to rescan (milliseconds).
+# Filesystem overwatch: how many levels to scan and how often to rescan.
 scan_depth = 5
 watch_interval = 1000
 
-# How often a heart beat with telemetry is sent to the receiver (milliseconds).
+# How often a heart beat with telemetry is sent to the receiver.
 heart_beat_interval = 1000
 "#;
 

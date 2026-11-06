@@ -30,25 +30,25 @@ fn invalid_receiver_url_is_parse_error() {
 fn connection_timeouts_default_and_can_be_overridden() {
     let p = write("defaults.toml", "agent_id = \"9d3b8f9e-6f2a-4c1e-9a55-2c7f0a1b3d44\"\nreceiver_url = \"tls://receiver.lan:7000\"\n");
     let cfg: AgentConfig = read_config_from(&p).unwrap();
-    assert_eq!(cfg.connect_timeout, Duration::from_secs(10));
-    assert_eq!(cfg.handshake_timeout, Duration::from_secs(10));
-    assert_eq!(cfg.backoff_min, Duration::from_secs(1));
-    assert_eq!(cfg.backoff_max, Duration::from_secs(60));
+    assert_eq!(cfg.connect_timeout, Duration::from_millis(10_000));
+    assert_eq!(cfg.handshake_timeout, Duration::from_millis(10_000));
+    assert_eq!(cfg.backoff_min, Duration::from_millis(1_000));
+    assert_eq!(cfg.backoff_max, Duration::from_millis(60_000));
     assert_eq!(cfg.backoff_multiplier, 2);
     assert_eq!(cfg.connect_max_retries, None);
     assert_eq!(cfg.breaker_failure_threshold, 5);
-    assert_eq!(cfg.breaker_open_for, Duration::from_secs(30));
+    assert_eq!(cfg.breaker_open_for, Duration::from_millis(30_000));
     assert_eq!(cfg.scan_depth, 5);
-    assert_eq!(cfg.watch_interval, Duration::from_millis(1000));
-    assert_eq!(cfg.heart_beat_interval, Duration::from_millis(1000));
+    assert_eq!(cfg.watch_interval, Duration::from_millis(1_000));
+    assert_eq!(cfg.heart_beat_interval, Duration::from_millis(1_000));
 
     let p = write(
         "override.toml",
-        "agent_id = \"9d3b8f9e-6f2a-4c1e-9a55-2c7f0a1b3d44\"\nreceiver_url = \"tls://receiver.lan:7000\"\nconnect_timeout = 3\nbackoff_max = 5\nconnect_max_retries = 7\n",
+        "agent_id = \"9d3b8f9e-6f2a-4c1e-9a55-2c7f0a1b3d44\"\nreceiver_url = \"tls://receiver.lan:7000\"\nconnect_timeout = 3000\nbackoff_max = 5000\nconnect_max_retries = 7\n",
     );
     let cfg: AgentConfig = read_config_from(&p).unwrap();
-    assert_eq!(cfg.connect_timeout, Duration::from_secs(3));
-    assert_eq!(cfg.backoff_max, Duration::from_secs(5));
+    assert_eq!(cfg.connect_timeout, Duration::from_millis(3_000));
+    assert_eq!(cfg.backoff_max, Duration::from_millis(5_000));
     assert_eq!(cfg.connect_max_retries, Some(7));
 }
 

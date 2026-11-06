@@ -44,13 +44,19 @@ pub enum FsError {
         source: std::io::Error,
     },
     #[error("can not write file to {}: {source}", path.display())]
-    Write {
+    CanNotWrite {
         path: PathBuf,
         #[source]
         source: std::io::Error,
     },
     #[error("can not read file from {}: {source}", path.display())]
-    Read {
+    CanNotRead {
+        path: PathBuf,
+        #[source]
+        source: std::io::Error,
+    },
+    #[error("can not delete file from {}: {source}", path.display())]
+    CanNotDelete {
         path: PathBuf,
         #[source]
         source: std::io::Error,
@@ -59,7 +65,7 @@ pub enum FsError {
     CanNotGetExecutablePath {
         #[source]
         source: std::io::Error,
-    },
+    }
 }
 
 

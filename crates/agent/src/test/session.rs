@@ -1,7 +1,7 @@
 use std::sync::Arc;
 use std::time::Duration;
 
-use fleet_crypto::Secret;
+use fleet_crypto::{Secret, TOKEN_HASH_BYTE_SIZE};
 use fleet_protocol::agent_receiver::HeartBeatMessage;
 use tokio::io::{AsyncReadExt, duplex};
 use tokio::sync::Mutex;
@@ -17,7 +17,7 @@ fn shared() -> Arc<Shared> {
     )
     .unwrap();
     Arc::new(Shared {
-        certificate: Secret { content: Vec::new() },
+        token_hash: Secret { content: vec![9u8; TOKEN_HASH_BYTE_SIZE] },
         config,
     })
 }
@@ -34,7 +34,8 @@ async fn sends_length_prefixed_heart_beats_and_stops_when_the_stream_breaks() {
     reader.read_exact(&mut body).await.unwrap();
 
     assert_eq!(body[0], 0xF0);
-    let message = HeartBeatMessage::try_from(body[1..].to_vec()).unwrap();
+    assert_eq!(&body[1..1 + TOKEN_HASH_BYTE_SIZE], shared.token_hash.content.as_slice());
+    let message = HeartBeatMessage::try_from(body[1 + TOKEN_HASH_BYTE_SIZE..].to_vec()).unwrap();
     assert_eq!(message.agent_id, shared.config.agent_id);
     assert!(message.cpu_cores > 0);
 

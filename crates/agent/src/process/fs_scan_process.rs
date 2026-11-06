@@ -28,23 +28,11 @@ pub fn fs_scan_process(
                 }
             };
 
-            let scanned = tokio::task::spawn_blocking({
-                let dir: PathBuf = dir.clone();
-                move || {
-                    let mut entries: Vec<FileMeta> = Vec::new();
-                    fs_scan(dir, depth, &mut entries).map(|()| entries)
-                }
-            })
-            .await;
-
-            let fresh: Vec<FileMeta> = match scanned {
-                Ok(Ok(entries)) => entries,
-                Ok(Err(err)) => {
-                    tracing::warn!("overwatch scan of {} failed: {err}", dir.display());
-                    continue;
-                }
+            let mut entries: Vec<FileMeta> = Vec::new();
+            let fresh: Vec<FileMeta> = match fs_scan(dir.clone(), depth, &mut entries).await {
+                Ok(()) => entries,
                 Err(err) => {
-                    tracing::error!("overwatch scan task failed: {err}");
+                    tracing::warn!("overwatch scan of {} failed: {err}", dir.display());
                     continue;
                 }
             };

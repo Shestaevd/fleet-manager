@@ -12,3 +12,7 @@
 *.pem.old
 *.key
 *.key.old
+
+# state the agent keeps next to its binary: its token hash and the probation marker
+.token.txt
+.probation

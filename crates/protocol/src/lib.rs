@@ -7,3 +7,6 @@ pub mod protocol;
 #[cfg(test)]
 mod test;
 mod domain;
+
+pub use domain::error::{ParseError, ProtocolError};
+pub use domain::model::TokenHash;

@@ -1,3 +1,4 @@
+use std::fmt::Display;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
@@ -6,6 +7,7 @@ pub struct AgentId(pub Uuid);
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct RequestId(pub Uuid);
+
 
 impl AgentId {
     pub fn new() -> Self {
@@ -28,5 +30,17 @@ impl Default for AgentId {
 impl Default for RequestId {
     fn default() -> Self {
         Self::new()
+    }
+}
+
+impl Display for RequestId {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        write!(f, "{}", self.0)
+    }
+}
+
+impl Display for AgentId {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        write!(f, "{}", self.0)
     }
 }

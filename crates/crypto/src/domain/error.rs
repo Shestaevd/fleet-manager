@@ -15,3 +15,9 @@ pub enum CertError {
         source: std::io::Error,
     },
 }
+
+#[derive(Debug, Error)]
+pub enum TokenError {
+    #[error("token hash must be exactly {expected} bytes, got {actual}")]
+    WrongSize { expected: usize, actual: usize },
+}

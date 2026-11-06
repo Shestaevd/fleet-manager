@@ -3,7 +3,7 @@ use std::time::Duration;
 use fleet_model::AgentId;
 use sysinfo::System;
 
-use crate::domain::model::IntoHeartBeat;
+use fleet_protocol::agent_receiver::IntoHeartBeat;
 use fleet_model::Telemetry;
 use crate::process::telemetry::collect_telemetry;
 

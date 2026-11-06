@@ -1,0 +1,9 @@
+[package]
+name = "fleet-util"
+version.workspace = true
+edition.workspace = true
+publish.workspace = true
+
+[dependencies]
+fleet-model = { workspace = true }
+tokio = { workspace = true }

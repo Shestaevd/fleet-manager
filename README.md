@@ -18,6 +18,7 @@ the receiver. Agents trust only the receiver's pinned certificate.
 | [`fleet-client`](crates/client/README.md) | Operator CLI |
 | [`fleet-protocol`](crates/protocol/README.md) | Packet format and message types shared by all three |
 | [`fleet-crypto`](crates/crypto/README.md) | Certificates and secrets |
+| `fleet-util` | File helpers shared by the agent and the receiver | done |
 | `fleet-config` | Reads TOML config files that sit next to the binary |
 | `fleet-model` | Shared ids and error types |
 

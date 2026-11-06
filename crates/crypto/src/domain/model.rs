@@ -1,6 +1,7 @@
 use std::fmt::{Debug, Display, Formatter};
 
 /// Secret bytes (a certificate or a key)
+#[derive(Clone, PartialEq)]
 pub struct Secret {
     pub content: Vec<u8>,
 }
