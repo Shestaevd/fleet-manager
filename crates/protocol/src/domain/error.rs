@@ -7,18 +7,21 @@ pub enum ProtocolError {
     EmptyPacket,
     #[error("token hash has the wrong size")]
     WrongTokenSize,
-    #[error("packet is larger than the 4-byte length prefix can describe")]
-    PacketTooLarge,
+    #[error("packet body of {size} bytes is over the {max} byte limit")]
+    PacketTooLarge { size: usize, max: usize },
     #[error("unknown message type byte 0x{0:02X}")]
     UnknownMessageType(u8),
-    #[error("packet is shorter than its 4-byte length prefix")]
+    #[error("packet is too short")]
     TruncatedPacket,
-    #[error("packet declares {declared} bytes after the length prefix but has {actual}")]
-    LengthMismatch { declared: usize, actual: usize },
     #[error("expected message type 0x{expected:02X}, got 0x{actual:02X}")]
     UnexpectedMessageType { expected: u8, actual: u8 },
     #[error(transparent)]
     Parse(#[from] ParseError),
+    #[error("Stream ended unexpectedly {}", source)]
+    StreamBroken {
+        #[source]
+        source: std::io::Error,
+    },
 }
 
 #[derive(Debug, Error)]

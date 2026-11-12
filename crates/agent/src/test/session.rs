@@ -2,6 +2,7 @@ use std::sync::Arc;
 use std::time::Duration;
 
 use fleet_crypto::{Secret, TOKEN_HASH_BYTE_SIZE};
+use fleet_model::MacAddress;
 use fleet_protocol::agent_receiver::HeartBeatMessage;
 use tokio::io::{AsyncReadExt, duplex};
 use tokio::sync::Mutex;
@@ -11,6 +12,8 @@ use crate::domain::config::AgentConfig;
 use crate::domain::model::Shared;
 use crate::process::session_process::heart_beat_process;
 
+const MAC: MacAddress = MacAddress([0x04, 0x42, 0x1a, 0xd2, 0xcb, 0x74]);
+
 fn shared() -> Arc<Shared> {
     let config: AgentConfig = toml::from_str(
         "agent_id = \"9d3b8f9e-6f2a-4c1e-9a55-2c7f0a1b3d44\"\nreceiver_url = \"tls://127.0.0.1:7000\"\nheart_beat_interval = 30\n",
@@ -18,6 +21,7 @@ fn shared() -> Arc<Shared> {
     .unwrap();
     Arc::new(Shared {
         token_hash: Secret { content: vec![9u8; TOKEN_HASH_BYTE_SIZE] },
+        mac_address: MAC,
         config,
     })
 }
@@ -33,9 +37,10 @@ async fn sends_length_prefixed_heart_beats_and_stops_when_the_stream_breaks() {
     let mut body = vec![0u8; u32::from_be_bytes(len) as usize];
     reader.read_exact(&mut body).await.unwrap();
 
-    assert_eq!(body[0], 0xF0);
+    assert_eq!(body[0], 0xC0);
     assert_eq!(&body[1..1 + TOKEN_HASH_BYTE_SIZE], shared.token_hash.content.as_slice());
     let message = HeartBeatMessage::try_from(body[1 + TOKEN_HASH_BYTE_SIZE..].to_vec()).unwrap();
+    assert_eq!(message.mac_address, MAC);
     assert_eq!(message.agent_id, shared.config.agent_id);
     assert!(message.cpu_cores > 0);
 

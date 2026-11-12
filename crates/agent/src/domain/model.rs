@@ -2,11 +2,12 @@ use std::fmt::Debug;
 
 use crate::domain::config::AgentConfig;
 use fleet_crypto::Secret;
-use fleet_model::FileMeta;
+use fleet_model::{FileMeta, MacAddress};
 
 
 pub struct Shared {
     pub token_hash: Secret,
+    pub mac_address: MacAddress,
     pub config: AgentConfig,
 }
 

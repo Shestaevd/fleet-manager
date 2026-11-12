@@ -1,7 +1,9 @@
+use serde::{Deserialize, Serialize};
 use std::fmt::{Debug, Display, Formatter};
 
 /// Secret bytes (a certificate or a key)
-#[derive(Clone, PartialEq)]
+#[derive(Clone, PartialEq, Serialize, Deserialize)]
+#[serde(transparent)]
 pub struct Secret {
     pub content: Vec<u8>,
 }

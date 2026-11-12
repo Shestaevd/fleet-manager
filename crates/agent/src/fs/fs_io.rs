@@ -10,13 +10,6 @@ use tokio::fs;
 
 const TOKEN_HASH_FILE: &str = ".token.txt";
 const PROBATION: &str = ".probation";
-const HOST_PEM_HASH_FILE: &str = "host.pem";
-
-pub async fn read_pem() -> Result<Vec<u8>, FsError> {
-    let executable_path: PathBuf = executable_dir()?;
-    read_file(executable_path.join(HOST_PEM_HASH_FILE)).await
-}
-
 pub async fn read_token_hash() -> Result<Vec<u8>, AgentError> {
     read_token_hash_from(executable_dir()?.join(TOKEN_HASH_FILE)).await
 }

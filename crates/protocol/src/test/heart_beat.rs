@@ -1,16 +1,19 @@
 use std::time::Duration;
 
-use fleet_model::{AgentId, RequestId, Telemetry};
+use fleet_model::{AgentId, MacAddress, RequestId, Telemetry};
 
 use crate::agent_receiver::HeartBeatMessage;
 use crate::domain::error::{ParseError, ProtocolError};
 use fleet_crypto::TOKEN_HASH_BYTE_SIZE;
 use crate::protocol::Package;
 
+const MAC: MacAddress = MacAddress([0x00, 0x1a, 0xb2, 0x0c, 0xff, 0x07]);
+
 fn sample() -> HeartBeatMessage {
     HeartBeatMessage {
         agent_id: AgentId::new(),
         package_id: RequestId::new(),
+        mac_address: MAC,
         timestamp: Duration::from_secs(1_700_000_000),
         uptime: Duration::from_secs(3600),
         cpu_cores: 4,
@@ -45,9 +48,15 @@ fn encoded_packet_is_length_then_type_then_token_hash_then_payload() {
 
     let len = u32::from_be_bytes(encoded[..4].try_into().unwrap()) as usize;
     assert_eq!(len, encoded.len() - 4);
-    assert_eq!(encoded[4], 0xF0);
+    assert_eq!(encoded[4], 0xC0);
     assert_eq!(&encoded[5..5 + TOKEN_HASH_BYTE_SIZE], token_hash.as_slice());
-    assert_eq!(HeartBeatMessage::try_from(encoded[5 + TOKEN_HASH_BYTE_SIZE..].to_vec()).unwrap(), message);
+    let decoded = HeartBeatMessage::try_from(encoded[5 + TOKEN_HASH_BYTE_SIZE..].to_vec()).unwrap();
+    assert_eq!(decoded, message);
+
+    let (decoded_hash, decoded) = HeartBeatMessage::decode(encoded[4..].to_vec()).unwrap();
+    assert_eq!(decoded_hash.content.as_slice(), token_hash.as_slice());
+    assert_eq!(decoded, message);
+    assert_eq!(decoded.mac_address, MAC);
 }
 
 #[test]

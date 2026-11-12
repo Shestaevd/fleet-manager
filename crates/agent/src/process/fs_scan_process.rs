@@ -8,6 +8,10 @@ use crate::domain::model::{FileMetaWindow, Shared};
 use fleet_model::FileMeta;
 use crate::fs::fs_io::fs_scan;
 
+/// Starts the task that keeps `lookup_window` up to date: every `watch_interval` it rescans the window's
+/// `search_from` directory down to `scan_depth` levels and replaces the loaded entries with the fresh scan.
+/// A failed scan or a poisoned lock is logged and tried again on the next tick, and a scan is dropped if
+/// `search_from` changed while it ran. The task never ends by itself; abort the handle to stop it.
 pub fn fs_scan_process(
     shared: Arc<Shared>,
     lookup_window: Arc<RwLock<FileMetaWindow>>,

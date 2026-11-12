@@ -4,6 +4,8 @@ use sysinfo::{LoadAvg, System};
 
 use fleet_model::Telemetry;
 
+/// Reads the uptime, CPU, load and memory into a `Telemetry`. CPU usage is the change since the previous call
+/// on the same `system`, so the first call reports 0% and later calls should be at least about 200 ms apart.
 pub fn collect_telemetry(system: &mut System) -> Telemetry {
     system.refresh_cpu_usage();
     system.refresh_memory();

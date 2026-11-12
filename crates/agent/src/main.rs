@@ -1,11 +1,14 @@
 use crate::domain::config::{AgentConfig, CONFIG_FILE_NAME, default_config};
 use crate::domain::model::{FileMetaWindow, Shared};
-use crate::fs::fs_io::{file_meta_of, fs_home, read_pem};
+use crate::fs::fs_io::{file_meta_of, fs_home};
 use crate::process::fs_scan_process::fs_scan_process;
+use crate::process::network::machine_mac_address;
 use crate::process::session_process::{registration_process, session_process};
 use crate::tcp::connector;
 use fleet_config::read_config_or_create;
 use fleet_crypto::Secret;
+use fleet_model::MacAddress;
+use fleet_util::fs::{executable_dir, read_file};
 use std::sync::{Arc, RwLock};
 use tokio::task::JoinHandle;
 
@@ -28,12 +31,23 @@ async fn main() {
 
     let (config, created): (AgentConfig, bool) =
         read_config_or_create(CONFIG_FILE_NAME, &default_config()).expect("can not load agent config");
+    
     if created {
         tracing::warn!("{CONFIG_FILE_NAME} did not exist, created a default one next to the binary; set receiver_url");
     }
+    
     tracing::info!("receiver: {}", config.receiver_url);
 
-    let certificate: Vec<u8> = read_pem().await.expect("can not read host.pem");
+    let mac_address: MacAddress = machine_mac_address();
+    tracing::info!("machine MAC address: {mac_address}");
+
+    let certificate: Vec<u8> = read_file(
+        executable_dir()
+            .expect("can not find the directory of the binary")
+            .join(&config.cert_path),
+    )
+    .await
+    .expect("can not read the certificate");
 
     let lookup_window: Arc<RwLock<FileMetaWindow>> = Arc::new(RwLock::new(FileMetaWindow {
         search_from: file_meta_of(fs_home()).await.expect("can not read home directory"),
@@ -46,7 +60,7 @@ async fn main() {
         move |config, reader, writer| {
             let lookup_window: Arc<RwLock<FileMetaWindow>> = lookup_window.clone();
             async move {
-                let shared = registration_process(config, reader.clone(), writer.clone()).await?;
+                let shared: Shared = registration_process(config, mac_address, reader.clone(), writer.clone()).await?;
                 let shared: Arc<Shared> = Arc::new(shared);
 
                 let scan_handle: JoinHandle<()> = fs_scan_process(shared.clone(), lookup_window);

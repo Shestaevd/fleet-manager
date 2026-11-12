@@ -21,29 +21,28 @@ use url::Url;
 use crate::domain::config::AgentConfig;
 use fleet_crypto::Secret;
 
-pub fn run<F, Fut>(config: AgentConfig, certificate: Secret, session: F) -> JoinHandle<io::Result<()>>
+pub type Reader = Arc<Mutex<ReadHalf<TlsStream<TcpStream>>>>;
+pub type Writer = Arc<Mutex<WriteHalf<TlsStream<TcpStream>>>>;
+
+pub fn run<F, Fut>(
+    config: AgentConfig,
+    certificate: Secret,
+    session: F,
+) -> JoinHandle<io::Result<()>>
 where
-    F: Fn(
-            AgentConfig,
-            Arc<Mutex<ReadHalf<TlsStream<TcpStream>>>>,
-            Arc<Mutex<WriteHalf<TlsStream<TcpStream>>>>,
-        ) -> Fut
-        + Send
-        + 'static,
+    F: Fn(AgentConfig, Reader, Writer) -> Fut + Send + 'static,
     Fut: Future<Output = Result<(), JoinError>> + Send + 'static,
 {
     tokio::spawn(connection_loop(config, certificate, session))
 }
 
-async fn connection_loop<F, Fut>(owned_config: AgentConfig, certificate: Secret, session: F) -> io::Result<()>
+async fn connection_loop<F, Fut>(
+    owned_config: AgentConfig,
+    certificate: Secret,
+    session: F,
+) -> io::Result<()>
 where
-    F: Fn(
-            AgentConfig,
-            Arc<Mutex<ReadHalf<TlsStream<TcpStream>>>>,
-            Arc<Mutex<WriteHalf<TlsStream<TcpStream>>>>,
-        ) -> Fut
-        + Send
-        + 'static,
+    F: Fn(AgentConfig, Reader, Writer) -> Fut + Send + 'static,
     Fut: Future<Output = Result<(), JoinError>>,
 {
     let config: &AgentConfig = &owned_config;
@@ -56,7 +55,7 @@ where
             breaker_backoff::constant(config.breaker_open_for),
         ))
         .build();
-    
+
     let breaker: &StateMachine<ConsecutiveFailures<Constant>, ()> = &breaker;
     let multiplier: u64 = config.backoff_multiplier.max(1);
 
@@ -65,7 +64,11 @@ where
             .factor((config.backoff_min.as_millis() as u64 / multiplier).max(1))
             .max_delay(config.backoff_max)
             .map(jitter)
-            .take(config.connect_max_retries.map_or(usize::MAX, |retries| retries as usize));
+            .take(
+                config
+                    .connect_max_retries
+                    .map_or(usize::MAX, |retries| retries as usize),
+            );
 
         let stream: TlsStream<TcpStream> = Retry::start(strategy, || async move {
             breaker
@@ -90,12 +93,7 @@ where
         let read_stream = Arc::new(Mutex::new(read_stream));
 
         tracing::info!("connected to {}", config.receiver_url);
-        if let Err(err) = session(
-            owned_config.clone(),
-            read_stream,
-            write_stream,
-        )
-        .await {
+        if let Err(err) = session(owned_config.clone(), read_stream, write_stream).await {
             tracing::warn!("session ended unexpectedly: {err}");
         }
     }

@@ -26,20 +26,39 @@ Packets without a token (`UnverifiedPackage`, registration and everything the re
 | token hash | `TOKEN_HASH_BYTE_SIZE` bytes | only in `Package` packets. The size is a constant in `fleet-crypto`; it is not sent, so both sides must be built with the same value |
 | payload | the rest | the message serialized with `postcard` |
 
-`Package::encode(token_hash)` builds the first kind. `UnverifiedPackage::encode()` and `UnverifiedPackage::decode(packet)`
-build and read the second; `decode` checks the length, the message type and the payload.
+The length may not exceed `MAX_PACKET_SIZE` (64 KiB); `encode` and `decode` are the only places that check it and return
+`PacketTooLarge`.
+
+`Package::encode(token_hash)` and `UnverifiedPackage::encode()` write a whole packet, length prefix included.
+`Package::decode(body)` and `UnverifiedPackage::decode(body)` take the packet **without** the length prefix, as an owned
+`Vec<u8>`: its length is the size of the message, and the reader has already used the 4 length bytes to know how much
+to read. They check the size (`MAX_PACKET_SIZE`), the message type and the payload; `Package::decode` also splits off
+the token hash and returns it as a `Secret` together with the message.
+
+## The MAC address
+
+Every message an agent sends has a mandatory `mac_address: MacAddress` field, next to `agent_id` and `package_id`, and
+reads it through `AgentReceiverPackage::mac_address()`. A message is built with
+`new(agent_id, mac_address)` (`IntoHeartBeat::into_heart_beat(agent_id, mac_address)` for heart beats). The agent reads the
+address once at start-up and reuses it. A machine without a physical network card sends all zeros
+(`MacAddress::UNSPECIFIED`, `is_unspecified()`), and all such machines look the same.
+
+The address is reported by the agent itself, so it is not proof of identity; it lets the receiver recognise a machine and
+later ban it by MAC as well as by id.
 
 ## Message types (`agent_receiver`)
 
-| Byte | Message | Direction | Token |
+| Byte | Message | Direction | Packet kind |
 |---|---|---|---|
-| `0xE0` | `Registration`: agent id and package id; asks to be admitted | agent to receiver | no |
-| `0xE1` | `RegistrationProbation`: the request id it answers; the agent waits for a decision | receiver to agent | no |
-| `0xE2` | `RegistrationAccepted`: the request id and the `TokenHash` to save | receiver to agent | no |
-| `0xE3` | `RegistrationFinished`: agent id and package id; sent with the saved token hash once it is on disk | agent to receiver | yes |
-| `0xF0` | `HeartBeat`: agent id, CPU (overall and per core), load average, memory, uptime | agent to receiver | yes |
-| `0xF1` | `FileMetaUpdate`, not implemented | agent to receiver | yes |
-| `0xF2` | `MoveWindow`, not implemented | | |
+| `0xA0` | `RegistrationStart`: agent id, package id and MAC address; asks to be admitted | agent to receiver | `UnverifiedPackage` |
+| `0xA2` | `AwaitingProbation`: agent id, package id and MAC address; first message of an agent that is on probation | agent to receiver | `UnverifiedPackage` |
+| `0xA3` | `Registered`: agent id, package id and MAC address; first message of an agent that already has its token | agent to receiver | `Package` |
+| `0xC0` | `HeartBeat`: agent id, package id, MAC address, CPU (overall and per core), load average, memory, uptime | agent to receiver | `Package` |
+| `0xC1` | `FileMetaUpdate`, not implemented | agent to receiver | `Package` |
+| `0xD0` | `RegistrationReceived`: the request id it answers; the agent waits for a decision | receiver to agent | `UnverifiedPackage` |
+| `0xD1` | `RegistrationAccepted`: the request id and the `Secret` to save | receiver to agent | `UnverifiedPackage` |
+| `0xD2` | `RegistrationVerified`: the request id of the `Registered` message it answers | receiver to agent | `UnverifiedPackage` |
+| `0xF0` | `MoveWindow`, not implemented | receiver to agent | |
 
 Messages the receiver sends implement `ReceiverAgentPackage` (a `request_id`). Messages an agent sends implement
-`AgentReceiverPackage` (an `agent_id` and a `package_id`). `0x00` is never a valid message type.
+`AgentReceiverPackage` (`agent_id`, `package_id` and `mac_address`). `0x00` is never a valid message type.

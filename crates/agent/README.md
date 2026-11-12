@@ -7,7 +7,8 @@ receiver over TLS and reports on the machine it runs on.
 
 1. **Start-up.** The agent reads two files that sit next to the binary for now:
    - `agent.toml`: settings. If it is missing, a default one is created with a fresh `agent_id`; set `receiver_url`.
-   - `host.pem`: the receiver's certificate, pinned as the only trusted one.
+   - the receiver's public certificate, pinned as the only trusted one. `cert_path` in `agent.toml` points to it
+     (default `host.pem`; a relative path is relative to the binary's directory).
 
    It keeps two more files there itself: `.token.txt`, the hash of its token (written owner-only; the agent never
    holds the token itself), and `.probation`, an empty marker that means "registration was sent, waiting for a decision".
@@ -15,10 +16,12 @@ receiver over TLS and reports on the machine it runs on.
    handshake, and splits the stream into a shared, locked read half and write half. Failed connects are retried
    with exponential backoff and jitter behind a circuit breaker. All of it is configured in `agent.toml`.
    Every new connection runs a session: registration first, then the working session.
-3. **Registration** (`registration_process`). If `.token.txt` exists the agent is registered and this step ends at once.
-   Otherwise it sends `Registration` (unless `.probation` already exists) and waits: `RegistrationProbation` creates
-   `.probation`; `RegistrationAccepted` carries the token hash, which is saved to `.token.txt` before `.probation`
-   is removed and `RegistrationFinished` (with that token hash as proof) is sent to the receiver.
+3. **Registration** (`registration_process`). The agent starts by telling the receiver where it stands:
+   `Registered` (sent with its token hash) if `.token.txt` exists, `AwaitingProbation` if only `.probation` exists,
+   otherwise `RegistrationStart`. Every message the agent builds carries the machine's MAC address, read once at start-up
+   (`process/network.rs`: of the physical network cards, the smallest real address; all zeros if there is none). Then it waits for the receiver: `RegistrationVerified` (the answer to `Registered`) ends the step;
+   `RegistrationReceived` creates `.probation`; `RegistrationAccepted` carries the token hash, which is saved to
+   `.token.txt` before `.probation` is removed, and ends the step.
 4. **Session** (`process/session_process.rs`). A heartbeat task sends a packet every `heart_beat_interval` with the
    agent id, CPU (overall and per core), load average, memory and uptime, carrying the token hash.
    If the stream breaks, the task ends and the connector reconnects.

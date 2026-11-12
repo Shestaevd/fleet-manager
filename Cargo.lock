@@ -690,6 +690,7 @@ version = "0.1.0"
 dependencies = [
  "rand 0.10.3",
  "rcgen",
+ "serde",
  "sha2",
  "thiserror",
 ]
@@ -737,6 +738,7 @@ dependencies = [
  "rustls-pemfile",
  "rustls-pki-types",
  "serde",
+ "serde_with",
  "thiserror",
  "tokio",
  "tokio-rustls",
@@ -744,6 +746,7 @@ dependencies = [
  "toml",
  "tracing",
  "tracing-subscriber",
+ "url",
  "uuid",
 ]
 

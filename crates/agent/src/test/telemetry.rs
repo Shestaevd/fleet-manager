@@ -1,11 +1,13 @@
 use std::time::Duration;
 
-use fleet_model::AgentId;
+use fleet_model::{AgentId, MacAddress};
 use sysinfo::System;
 
 use fleet_protocol::agent_receiver::IntoHeartBeat;
 use fleet_model::Telemetry;
 use crate::process::telemetry::collect_telemetry;
+
+const MAC: MacAddress = MacAddress([0x04, 0x42, 0x1a, 0xd2, 0xcb, 0x74]);
 
 #[test]
 fn collected_telemetry_has_sane_values() {
@@ -34,8 +36,8 @@ fn heart_beat_copies_telemetry_and_gets_a_new_request_id_each_time() {
     };
     let agent_id = AgentId::new();
 
-    let first = telemetry.clone().into_heart_beat(agent_id);
-    let second = telemetry.into_heart_beat(agent_id);
+    let first = telemetry.clone().into_heart_beat(agent_id, MAC);
+    let second = telemetry.into_heart_beat(agent_id, MAC);
 
     assert_eq!(first.agent_id, agent_id);
     assert_eq!(first.uptime, Duration::from_secs(3600));
@@ -43,5 +45,6 @@ fn heart_beat_copies_telemetry_and_gets_a_new_request_id_each_time() {
     assert_eq!(first.cpu_core_usage_percent, vec![10.0, 15.0, 5.0, 20.0]);
     assert_eq!(first.load_average, [0.5, 0.4, 0.3]);
     assert_eq!(first.memory_used_bytes, 4 << 30);
+    assert_eq!(first.mac_address, MAC);
     assert_ne!(first.package_id, second.package_id);
 }

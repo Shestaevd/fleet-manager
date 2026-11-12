@@ -1,6 +1,9 @@
+use std::path::PathBuf;
 use std::time::Duration;
 
+use crate::fs;
 use fleet_model::AgentId;
+use fleet_util::fs::executable_dir;
 use serde::Deserialize;
 use serde_with::{DurationMilliSeconds, serde_as};
 use url::Url;
@@ -10,6 +13,8 @@ use url::Url;
 pub struct AgentConfig {
     pub agent_id: AgentId,
     pub receiver_url: Url,
+    #[serde(default = "default_cert_path")]
+    pub cert_path: PathBuf,
     #[serde_as(as = "DurationMilliSeconds<u64>")]
     #[serde(default = "default_connect_timeout")]
     pub connect_timeout: Duration,
@@ -39,6 +44,12 @@ pub struct AgentConfig {
     #[serde_as(as = "DurationMilliSeconds<u64>")]
     #[serde(default = "default_heart_beat_interval")]
     pub heart_beat_interval: Duration,
+}
+
+fn default_cert_path() -> PathBuf {
+    executable_dir()
+        .map(|path| path.join("host.pem"))
+        .expect("Cert path not found")
 }
 
 fn default_connect_timeout() -> Duration {
@@ -90,6 +101,9 @@ agent_id = "{agent_id}"
 # Route to the receiver. 
 # I will replace it with a system variable in the future.
 receiver_url = "tls://127.0.0.1:7000"
+
+# The receiver's public certificate. A relative path is relative to the binary's directory.
+# cert_path = {executable_path} + "host.pem" is default
 
 # Connection settings. Every duration is in milliseconds.
 connect_timeout = 10000

@@ -1,3 +1,4 @@
+use std::path::PathBuf;
 use std::time::Duration;
 
 use fleet_config::read_config_from;
@@ -39,17 +40,19 @@ fn connection_timeouts_default_and_can_be_overridden() {
     assert_eq!(cfg.breaker_failure_threshold, 5);
     assert_eq!(cfg.breaker_open_for, Duration::from_millis(30_000));
     assert_eq!(cfg.scan_depth, 5);
+    assert_eq!(cfg.cert_path, fleet_util::fs::executable_dir().unwrap().join("host.pem"));
     assert_eq!(cfg.watch_interval, Duration::from_millis(1_000));
     assert_eq!(cfg.heart_beat_interval, Duration::from_millis(1_000));
 
     let p = write(
         "override.toml",
-        "agent_id = \"9d3b8f9e-6f2a-4c1e-9a55-2c7f0a1b3d44\"\nreceiver_url = \"tls://receiver.lan:7000\"\nconnect_timeout = 3000\nbackoff_max = 5000\nconnect_max_retries = 7\n",
+        "agent_id = \"9d3b8f9e-6f2a-4c1e-9a55-2c7f0a1b3d44\"\nreceiver_url = \"tls://receiver.lan:7000\"\nconnect_timeout = 3000\nbackoff_max = 5000\nconnect_max_retries = 7\ncert_path = \"/etc/fleet/receiver.pem\"\n",
     );
     let cfg: AgentConfig = read_config_from(&p).unwrap();
     assert_eq!(cfg.connect_timeout, Duration::from_millis(3_000));
     assert_eq!(cfg.backoff_max, Duration::from_millis(5_000));
     assert_eq!(cfg.connect_max_retries, Some(7));
+    assert_eq!(cfg.cert_path, PathBuf::from("/etc/fleet/receiver.pem"));
 }
 
 #[test]

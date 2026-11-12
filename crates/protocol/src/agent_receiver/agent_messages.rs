@@ -2,32 +2,35 @@ use std::time::Duration;
 
 use crate::agent_receiver::MessageType;
 use crate::protocol::{Package, UnverifiedPackage, postcard_message};
-use fleet_model::{AgentId, RequestId, Telemetry};
+use fleet_model::{AgentId, MacAddress, RequestId, Telemetry};
 use serde::{Deserialize, Serialize};
 
 pub trait AgentReceiverPackage {
     fn agent_id(&self) -> AgentId;
     fn package_id(&self) -> RequestId;
+    /// The MAC address of the machine the agent runs on; all zeros if it has no physical network card.
+    fn mac_address(&self) -> MacAddress;
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct RegistrationMessage {
     pub agent_id: AgentId,
     pub package_id: RequestId,
+    pub mac_address: MacAddress,
 }
 
 impl RegistrationMessage {
-    /// A registration from `agent_id` with a freshly generated package id.
-    pub fn new(agent_id: AgentId) -> Self {
+    pub fn new(agent_id: AgentId, mac_address: MacAddress) -> Self {
         Self {
             agent_id,
             package_id: RequestId::new(),
+            mac_address,
         }
     }
 }
 
 impl UnverifiedPackage for RegistrationMessage {
-    const MESSAGE_TYPE: u8 = MessageType::Registration.as_byte();
+    const MESSAGE_TYPE: u8 = MessageType::RegistrationStart.as_byte();
 }
 
 impl AgentReceiverPackage for RegistrationMessage {
@@ -38,35 +41,38 @@ impl AgentReceiverPackage for RegistrationMessage {
     fn package_id(&self) -> RequestId {
         self.package_id
     }
+
+    fn mac_address(&self) -> MacAddress {
+        self.mac_address
+    }
 }
 
 postcard_message!(RegistrationMessage);
 
-/// Sent by an agent once it has saved the token hash from `RegistrationAccepted`. It is sent as a `Package`,
-/// so the saved token hash travels in the packet and proves the agent really holds it.
+/// Sent first by an agent that is on probation and has no token yet: it already asked and is still waiting.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
-pub struct RegistrationFinishedMessage {
+pub struct AwaitingProbationMessage {
     pub agent_id: AgentId,
     pub package_id: RequestId,
+    pub mac_address: MacAddress,
 }
 
-impl RegistrationFinishedMessage {
-    /// A confirmation from `agent_id` with a freshly generated package id.
-    pub fn new(agent_id: AgentId) -> Self {
+impl AwaitingProbationMessage {
+    /// A message from `agent_id` with a freshly generated package id.
+    pub fn new(agent_id: AgentId, mac_address: MacAddress) -> Self {
         Self {
             agent_id,
             package_id: RequestId::new(),
+            mac_address,
         }
     }
 }
 
-impl Package for RegistrationFinishedMessage {
-    fn message_type(&self) -> u8 {
-        MessageType::RegistrationFinished.into()
-    }
+impl UnverifiedPackage for AwaitingProbationMessage {
+    const MESSAGE_TYPE: u8 = MessageType::AwaitingProbation.as_byte();
 }
 
-impl AgentReceiverPackage for RegistrationFinishedMessage {
+impl AgentReceiverPackage for AwaitingProbationMessage {
     fn agent_id(&self) -> AgentId {
         self.agent_id
     }
@@ -74,14 +80,59 @@ impl AgentReceiverPackage for RegistrationFinishedMessage {
     fn package_id(&self) -> RequestId {
         self.package_id
     }
+
+    fn mac_address(&self) -> MacAddress {
+        self.mac_address
+    }
 }
 
-postcard_message!(RegistrationFinishedMessage);
+postcard_message!(AwaitingProbationMessage);
+
+/// Sent first by an agent that already has its token. It is sent as a `Package`, so the token hash
+/// travels in the packet and the receiver can tell the agent is who it says it is.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct RegisteredMessage {
+    pub agent_id: AgentId,
+    pub package_id: RequestId,
+    pub mac_address: MacAddress,
+}
+
+impl RegisteredMessage {
+    /// A message from `agent_id` with a freshly generated package id.
+    pub fn new(agent_id: AgentId, mac_address: MacAddress) -> Self {
+        Self {
+            agent_id,
+            package_id: RequestId::new(),
+            mac_address,
+        }
+    }
+}
+
+impl Package for RegisteredMessage {
+    const MESSAGE_TYPE: u8 = MessageType::Registered.as_byte();
+}
+
+impl AgentReceiverPackage for RegisteredMessage {
+    fn agent_id(&self) -> AgentId {
+        self.agent_id
+    }
+
+    fn package_id(&self) -> RequestId {
+        self.package_id
+    }
+
+    fn mac_address(&self) -> MacAddress {
+        self.mac_address
+    }
+}
+
+postcard_message!(RegisteredMessage);
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct HeartBeatMessage {
     pub agent_id: AgentId,
     pub package_id: RequestId,
+    pub mac_address: MacAddress,
     pub timestamp: Duration,
     pub uptime: Duration,
     pub cpu_cores: u32,
@@ -93,9 +144,7 @@ pub struct HeartBeatMessage {
 }
 
 impl Package for HeartBeatMessage {
-    fn message_type(&self) -> u8 {
-        MessageType::HeartBeat.into()
-    }
+    const MESSAGE_TYPE: u8 = MessageType::HeartBeat.as_byte();
 }
 
 impl AgentReceiverPackage for HeartBeatMessage {
@@ -105,6 +154,10 @@ impl AgentReceiverPackage for HeartBeatMessage {
 
     fn package_id(&self) -> RequestId {
         self.package_id
+    }
+
+    fn mac_address(&self) -> MacAddress {
+        self.mac_address
     }
 }
 
@@ -126,14 +179,15 @@ impl From<HeartBeatMessage> for Telemetry {
 postcard_message!(HeartBeatMessage);
 
 pub trait IntoHeartBeat {
-    fn into_heart_beat(self, agent_id: AgentId) -> HeartBeatMessage;
+    fn into_heart_beat(self, agent_id: AgentId, mac_address: MacAddress) -> HeartBeatMessage;
 }
 
 impl IntoHeartBeat for Telemetry {
-    fn into_heart_beat(self, agent_id: AgentId) -> HeartBeatMessage {
+    fn into_heart_beat(self, agent_id: AgentId, mac_address: MacAddress) -> HeartBeatMessage {
         HeartBeatMessage {
             agent_id,
             package_id: RequestId::new(),
+            mac_address,
             timestamp: self.timestamp,
             uptime: self.uptime,
             cpu_cores: self.cpu_cores,

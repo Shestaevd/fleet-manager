@@ -1,6 +1,8 @@
 use std::time::Duration;
 
-#[derive(Debug, Clone, PartialEq)]
+use serde::{Deserialize, Serialize};
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct Telemetry {
     pub timestamp: Duration,
     pub uptime: Duration,

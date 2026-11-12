@@ -4,9 +4,10 @@ pub mod message_type;
 pub mod receiver_messages;
 
 pub use agent_messages::{
-    AgentReceiverPackage, HeartBeatMessage, IntoHeartBeat, RegistrationFinishedMessage, RegistrationMessage,
+    AgentReceiverPackage, AwaitingProbationMessage, HeartBeatMessage, IntoHeartBeat, RegisteredMessage,
+    RegistrationMessage,
 };
 pub use message_type::MessageType;
 pub use receiver_messages::{
-    ReceiverAgentPackage, RegistrationAcceptedMessage, RegistrationProbationMessage,
+    ReceiverAgentPackage, RegistrationAcceptedMessage, RegistrationReceivedMessage, RegistrationVerifiedMessage,
 };
