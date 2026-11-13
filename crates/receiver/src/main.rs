@@ -39,7 +39,7 @@ async fn main() {
         agent_manager: Mutex::new(AgentStoreService::new()),
     });
 
-    let server: JoinHandle<std::io::Result<()>> = run(Arc::new(config), move |_config, reader, writer| {
+    let server: JoinHandle<std::io::Result<()>> = run(Arc::new(config), move |config, reader, writer| {
         let shared: Arc<Shared> = Arc::clone(&shared);
         async move { session_process(shared, reader, writer).await }
     });
