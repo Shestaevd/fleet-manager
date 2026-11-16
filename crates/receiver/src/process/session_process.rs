@@ -18,7 +18,10 @@ use crate::tcp::server::{Reader, Writer};
 
 pub async fn session_process(shared: Arc<Shared>, reader: Reader, writer: Writer) -> Result<(), JoinError> {
     match verification_process(shared, reader, writer).await? {
-        Ok(verified) => listening_process(verified).await,
+        Ok(verified) => {
+            tracing::debug!("session verified: {:?}", verified);
+            listening_process(verified).await
+        }
         Err(err) => {
             tracing::warn!("verification failed: {err}, closing connection");
             Ok(())
@@ -30,13 +33,15 @@ fn listening_process(verified: Verified) -> JoinHandle<()> {
     tokio::spawn(async move {
         let Verified { agent_id, mut reader, writer } = verified;
         let _writer: Writer = writer;
-        tracing::info!("agent {agent_id} verified");
+        tracing::debug!("agent {agent_id} verified");
 
         let mut buffer: [u8; 1024] = [0u8; 1024];
         loop {
             match reader.read(&mut buffer).await {
                 Ok(0) => break,
-                Ok(_) => {}
+                Ok(data) => {
+                    tracing::debug!("received a message sized: {}", data);
+                }
                 Err(err) => {
                     tracing::warn!("connection of agent {agent_id} broke: {err}");
                     break;
@@ -58,6 +63,7 @@ enum Verdict {
     Rejected(AgentId),
 }
 
+#[derive(Debug)]
 pub struct Verified {
     pub agent_id: AgentId,
     pub reader: Reader,

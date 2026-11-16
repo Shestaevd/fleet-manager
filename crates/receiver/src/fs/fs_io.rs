@@ -17,6 +17,32 @@ const AGENT_MAC: &str = "mac";
 const AGENTS_STORE_DIR: &str = "agents";
 
 
+/// The ids of all agents in `<executable dir>/agents`; directories with a name that is not an id are skipped.
+/// An empty list if the store does not exist yet.
+pub async fn read_agent_ids() -> Result<Vec<AgentId>, AgentStoreError> {
+    let store: PathBuf = executable_dir()?.join(AGENTS_STORE_DIR);
+    let mut entries: tokio::fs::ReadDir = match tokio::fs::read_dir(&store).await {
+        Ok(entries) => entries,
+        Err(err) if err.kind() == ErrorKind::NotFound => return Ok(Vec::new()),
+        Err(source) => return Err(FsError::CanNotReadDirectory { path: store, source }.into()),
+    };
+
+    let mut ids: Vec<AgentId> = Vec::new();
+    while let Some(entry) = entries
+        .next_entry()
+        .await
+        .map_err(|source| FsError::CanNotReadDirectory { path: store.clone(), source })?
+    {
+        let id: Option<AgentId> = entry
+            .file_name()
+            .to_str()
+            .and_then(|name| name.parse::<uuid::Uuid>().ok())
+            .map(AgentId);
+        ids.extend(id);
+    }
+    Ok(ids)
+}
+
 pub async fn read_agent(agent_id: AgentId) -> Result<Option<AgentState>, AgentStoreError> {
     read_agent_from(executable_dir()?.join(AGENTS_STORE_DIR), agent_id).await
 }

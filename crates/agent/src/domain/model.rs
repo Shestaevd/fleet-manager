@@ -5,6 +5,7 @@ use fleet_crypto::Secret;
 use fleet_model::{FileMeta, MacAddress};
 
 
+#[derive(Debug)]
 pub struct Shared {
     pub token_hash: Secret,
     pub mac_address: MacAddress,

@@ -24,7 +24,7 @@ pub async fn write_in_probation() -> Result<(), FsError> {
     write_file(executable_path.join(PROBATION), &[]).await
 }
 
-pub async fn delete_in_probation(path: PathBuf) -> Result<(), FsError> {
+pub async fn delete_in_probation() -> Result<(), FsError> {
     let executable_path: PathBuf = executable_dir()?;
     delete_file(executable_path.join(PROBATION)).await
 }

@@ -64,6 +64,7 @@ async fn main() {
                 let shared: Arc<Shared> = Arc::new(shared);
 
                 let scan_handle: JoinHandle<()> = fs_scan_process(shared.clone(), lookup_window);
+                tracing::info!("registration successful: {:?}", *shared);
                 let result = session_process(shared, reader, writer).await;
                 scan_handle.abort();
                 result

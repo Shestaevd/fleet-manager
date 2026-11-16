@@ -1,5 +1,7 @@
 # Fleet
 
+[![codecov](https://codecov.io/gh/Shestaevd/fleet-manager/graph/badge.svg)](https://codecov.io/gh/Shestaevd/fleet-manager)
+
 Self-hosted fleet management for machines I own, written in Rust (Tokio). Internal administration only.
 
 ```

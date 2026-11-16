@@ -36,6 +36,7 @@ where
     W: AsyncWrite + Unpin + Send + 'static,
 {
     tokio::spawn(async move {
+        tracing::info!("heart beat process started");
         let period: Duration = shared.config.heart_beat_interval;
         let mut system: System = System::new();
         let mut ticker: Interval = interval_at(Instant::now(), period);
@@ -44,6 +45,7 @@ where
 
             let heart_beat: HeartBeatMessage =
                 collect_telemetry(&mut system).into_heart_beat(shared.config.agent_id, shared.mac_address);
+            tracing::debug!("telemetry collected: {:?}", heart_beat);
             let bytes: Vec<u8> = match heart_beat.encode(&shared.token_hash.content) {
                 Ok(bytes) => bytes,
                 Err(err) => {
@@ -105,10 +107,10 @@ where
         let token_hash: Option<Vec<u8>> = match read_token_hash().await {
             Ok(token_hash) => Some(token_hash),
             Err(AgentError::Fs(FsError::CanNotRead { source, .. }))
-                if source.kind() == std::io::ErrorKind::NotFound =>
-            {
-                None
-            }
+            if source.kind() == std::io::ErrorKind::NotFound =>
+                {
+                    None
+                }
             Err(err) => panic!("can not use the saved token hash: {err}"),
         };
 
@@ -166,7 +168,7 @@ where
                 .copied()
                 .ok_or(fleet_protocol::ProtocolError::EmptyPacket)
                 .and_then(MessageType::try_from);
-            
+
             match message_type {
                 Ok(MessageType::RegistrationReceived) => {
                     match RegistrationReceivedMessage::decode(body) {
@@ -188,10 +190,10 @@ where
                                 .expect("can not save the token hash");
                             tracing::info!("registration accepted, token hash saved");
 
-                            match delete_in_probation(std::path::PathBuf::new()).await {
+                            match delete_in_probation().await {
                                 Ok(()) => {}
                                 Err(FsError::CanNotDelete { source, .. })
-                                    if source.kind() == std::io::ErrorKind::NotFound => {}
+                                if source.kind() == std::io::ErrorKind::NotFound => {}
                                 Err(err) => {
                                     tracing::warn!("can not remove the probation file: {err}")
                                 }
