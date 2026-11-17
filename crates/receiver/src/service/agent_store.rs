@@ -1,6 +1,6 @@
 use crate::domain::error::AgentStoreError;
 use crate::domain::model::{AgentState, ProbationAgent, RegisteredAgent};
-use crate::fs::fs_io::{add_unverified_agent, read_agent, write_agent_token};
+use crate::fs::agent_fs_io::{add_unverified_agent, read_agent, write_agent_token};
 use fleet_crypto::{Secret, generate_secure_token, hash_token};
 use fleet_model::{AgentId, MacAddress, Telemetry};
 

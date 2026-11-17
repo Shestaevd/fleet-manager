@@ -6,7 +6,7 @@ use fleet_model::{AgentId, MacAddress, Telemetry};
 use crate::domain::error::AgentStoreError;
 use crate::domain::model::AgentState;
 use crate::domain::model::ProbationAgent;
-use crate::fs::fs_io::{add_unverified_agent_to, clear_agent_from, read_agent_from, write_agent_token_to};
+use crate::fs::agent_fs_io::{add_unverified_agent_to, clear_agent_from, read_agent_from, write_agent_token_to};
 
 fn store(name: &str) -> PathBuf {
     let path: PathBuf = std::env::temp_dir().join(format!("fleet-receiver-{}-{name}", std::process::id()));

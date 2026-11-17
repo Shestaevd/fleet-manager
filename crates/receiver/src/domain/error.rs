@@ -22,6 +22,28 @@ pub enum AgentStoreError {
 }
 
 #[derive(Debug, Error)]
+pub enum UserStoreError {
+    #[error(transparent)]
+    Fs(#[from] FsError),
+    #[error("invalid login: letters, digits, '_', '-' and '.' only, 1 to 64 characters, not starting with '.'")]
+    InvalidLogin,
+    #[error("user already exists")]
+    AlreadyExists,
+    #[error("no such user")]
+    NoSuchUser,
+    #[error("wrong login or password")]
+    InvalidCredentials,
+    #[error("the session token is wrong or expired")]
+    InvalidToken,
+    #[error(transparent)]
+    Password(#[from] fleet_crypto::PasswordError),
+    #[error("background task failed: {0}")]
+    Task(String),
+    #[error("file {} of a user is corrupt: {reason}", path.display())]
+    Corrupt { path: PathBuf, reason: String },
+}
+
+#[derive(Debug, Error)]
 pub enum VerificationError {
     #[error(transparent)]
     Protocol(#[from] ProtocolError),

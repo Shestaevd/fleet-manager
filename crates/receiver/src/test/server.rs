@@ -6,17 +6,15 @@ use std::time::Duration;
 use fleet_crypto::generate_certs;
 use rustls::pki_types::ServerName;
 use rustls::{ClientConfig, RootCertStore};
-use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::net::TcpStream;
-use tokio::time::{sleep, timeout};
+use tokio::time::sleep;
 use tokio_rustls::TlsConnector;
 use tokio_rustls::client::TlsStream;
 
-use crate::domain::config::{AgentsConfig, ReceiverConfig, ServerConfig};
-use crate::tcp::server::{Reader, Writer, run};
+use crate::domain::config::ServerConfig;
 
 struct Setup {
-    config: Arc<ReceiverConfig>,
+    config: Arc<ServerConfig>,
     connector: TlsConnector,
     dir: PathBuf,
 }
@@ -45,22 +43,19 @@ fn setup(name: &str, max_connections: usize, handshake_timeout: Duration) -> Set
         ClientConfig::builder().with_root_certificates(roots).with_no_client_auth(),
     ));
 
-    let config = ReceiverConfig {
-        server_config: ServerConfig {
-            host: "127.0.0.1".to_owned(),
-            port,
-            max_connections,
-            handshake_timeout,
-            cert_path: dir.join("cert.pem"),
-            key_path: dir.join("key.pem"),
-        },
-        agents_config: AgentsConfig::default(),
+    let config = ServerConfig {
+        host: "127.0.0.1".to_owned(),
+        port,
+        max_connections,
+        handshake_timeout,
+        cert_path: dir.join("cert.pem"),
+        key_path: dir.join("key.pem"),
     };
     Setup { config: Arc::new(config), connector, dir }
 }
 
 async fn connect(setup: &Setup) -> std::io::Result<TlsStream<TcpStream>> {
-    let addr = format!("127.0.0.1:{}", setup.config.server_config.port);
+    let addr = format!("127.0.0.1:{}", setup.config.port);
     let mut last = None;
     for _ in 0..40 {
         match TcpStream::connect(&addr).await {

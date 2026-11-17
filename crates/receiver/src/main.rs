@@ -35,21 +35,31 @@ async fn main() {
     }
 
     let shared: Arc<Shared> = Arc::new(Shared {
-        config: config.clone(),
+        config: config.agents_server_config.clone(),
         agent_manager: Mutex::new(AgentStoreService::new()),
     });
 
-    let server: JoinHandle<std::io::Result<()>> = run(Arc::new(config), move |config, reader, writer| {
-        let shared: Arc<Shared> = Arc::clone(&shared);
+    let agent_server: JoinHandle<std::io::Result<()>> = run(config.agents_server_config.clone(), move |reader, writer| {
+        let shared = Arc::clone(&shared);
         async move { session_process(shared, reader, writer).await }
     });
 
-    tokio::select! {
-        ended = server => match ended {
-            Ok(Ok(())) => tracing::info!("the server stopped"),
-            Ok(Err(err)) => tracing::error!("the server failed: {err}"),
-            Err(err) => tracing::error!("the server task ended unexpectedly: {err}"),
-        },
-        _ = tokio::signal::ctrl_c() => tracing::info!("interrupted, shutting down"),
+    let client_server: JoinHandle<std::io::Result<()>> = run(config.client_server_config.clone(), move |reader, writer| {
+        async move { todo!() }
+    });
+
+    let (agents, clients) = tokio::join!(agent_server, client_server);
+    log_server_end("agent server", agents);
+    log_server_end("client server", clients);
+    tracing::info!("the receiver finished its work");
+}
+
+/// Says in the log how a server task ended: normally, with an error, by a panic or by being cancelled.
+fn log_server_end(name: &str, ended: Result<std::io::Result<()>, JoinError>) {
+    match ended {
+        Ok(Ok(())) => tracing::info!("the {name} stopped"),
+        Ok(Err(err)) => tracing::error!("the {name} failed: {err}"),
+        Err(err) if err.is_panic() => tracing::error!("the {name} panicked: {err}"),
+        Err(err) => tracing::warn!("the {name} was cancelled: {err}"),
     }
 }

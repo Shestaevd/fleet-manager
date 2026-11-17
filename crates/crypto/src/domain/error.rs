@@ -21,3 +21,9 @@ pub enum TokenError {
     #[error("token hash must be exactly {expected} bytes, got {actual}")]
     WrongSize { expected: usize, actual: usize },
 }
+
+#[derive(Debug, Error)]
+pub enum PasswordError {
+    #[error("can not hash the password: {0}")]
+    Hash(String),
+}

@@ -13,35 +13,36 @@ use tokio::time::timeout;
 use tokio_rustls::TlsAcceptor;
 use tokio_rustls::server::TlsStream;
 
-use crate::domain::config::ReceiverConfig;
+use crate::domain::config::ServerConfig;
+use crate::domain::model::Shared;
 
 pub type Reader = ReadHalf<TlsStream<TcpStream>>;
 pub type Writer = WriteHalf<TlsStream<TcpStream>>;
 
-pub fn run<F, Fut>(config: Arc<ReceiverConfig>, session: F) -> JoinHandle<io::Result<()>>
+pub fn run<F, Fut>(config: ServerConfig, session: F) -> JoinHandle<io::Result<()>>
 where
-    F: Fn(Arc<ReceiverConfig>, Reader, Writer) -> Fut + Send + Sync + 'static,
+    F: Fn(Reader, Writer) -> Fut + Send + Sync + 'static,
     Fut: Future<Output = Result<(), JoinError>> + Send + 'static,
 {
     tokio::spawn(server_loop(config, session))
 }
 
-async fn server_loop<F, Fut>(config: Arc<ReceiverConfig>, session: F) -> io::Result<()>
+async fn server_loop<F, Fut>(config: ServerConfig, session: F) -> io::Result<()>
 where
-    F: Fn(Arc<ReceiverConfig>, Reader, Writer) -> Fut + Send + Sync + 'static,
+    F: Fn(Reader, Writer) -> Fut + Send + Sync + 'static,
     Fut: Future<Output = Result<(), JoinError>> + Send + 'static,
 {
     let acceptor: TlsAcceptor = TlsAcceptor::from(Arc::new(tls_config(&config).await?));
     let listener: TcpListener =
-        TcpListener::bind((config.server_config.host.as_str(), config.server_config.port)).await?;
-    let permits: Arc<Semaphore> = Arc::new(Semaphore::new(config.server_config.max_connections));
+        TcpListener::bind((config.host.as_str(), config.port)).await?;
+    let permits: Arc<Semaphore> = Arc::new(Semaphore::new(config.max_connections));
 
     let session: Arc<F> = Arc::new(session);
 
     tracing::info!(
         "listening on {}:{}",
-        config.server_config.host,
-        config.server_config.port
+        config.host,
+        config.port
     );
 
     loop {
@@ -59,12 +60,11 @@ where
         };
 
         let acceptor: TlsAcceptor = acceptor.clone();
-        let config: Arc<ReceiverConfig> = config.clone();
         let session: Arc<F> = session.clone();
 
         tokio::spawn(async move {
             let _permit = permit;
-            let handshake_timeout: Duration = config.server_config.handshake_timeout;
+            let handshake_timeout: Duration = config.handshake_timeout;
             let tls: TlsStream<TcpStream> = match accept(stream, &acceptor, handshake_timeout).await {
                 Ok(tls) => tls,
                 Err(err) => {
@@ -76,7 +76,7 @@ where
             tracing::debug!("{peer} connected");
             let (reader, writer) = tokio::io::split(tls);
             let ended: Result<(), JoinError> =
-                session(config, reader, writer).await;
+                session(reader, writer).await;
             match ended {
                 Ok(()) => tracing::debug!("{peer} disconnected"),
                 Err(err) => tracing::warn!("session of {peer} ended unexpectedly: {err}"),
@@ -96,12 +96,12 @@ async fn accept(
         .map_err(|_| io::Error::new(io::ErrorKind::TimedOut, "tls handshake timed out"))?
 }
 
-async fn tls_config(config: &ReceiverConfig) -> io::Result<rustls::ServerConfig> {
+async fn tls_config(config: &ServerConfig) -> io::Result<rustls::ServerConfig> {
     let dir = executable_dir().map_err(io::Error::other)?;
-    let cert_pem: Vec<u8> = read_file(dir.join(&config.server_config.cert_path))
+    let cert_pem: Vec<u8> = read_file(dir.join(&config.cert_path))
         .await
         .map_err(io::Error::other)?;
-    let key_pem: Vec<u8> = read_file(dir.join(&config.server_config.key_path))
+    let key_pem: Vec<u8> = read_file(dir.join(&config.key_path))
         .await
         .map_err(io::Error::other)?;
 
