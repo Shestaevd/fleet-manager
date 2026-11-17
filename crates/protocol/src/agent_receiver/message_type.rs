@@ -11,7 +11,7 @@ pub enum MessageType {
     /// The agent writes its `.probation` file and keeps waiting on the same connection.
     RegistrationReceived = 0xD0,
     /// Receiver to agent: the agent was approved while it was offline; the answer to `AwaitingProbation`. It carries
-    /// the token hash (a `Secret`) the agent must save to `.token.txt` (and then drop its `.probation` file) and
+    /// the token hash (a `Secret`) the agent must save to `.token` (and then drop its `.probation` file) and
     /// send with every later packet. The agent is authenticated by receiving it.
     RegistrationAccepted = 0xD1,
     /// Receiver to agent: answer to `Registered` whose token hash and MAC address matched. The agent is

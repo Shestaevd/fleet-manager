@@ -8,7 +8,7 @@ use std::fs::{FileType, Metadata};
 use std::path::PathBuf;
 use tokio::fs;
 
-const TOKEN_HASH_FILE: &str = ".token.txt";
+const TOKEN_HASH_FILE: &str = ".token";
 const PROBATION: &str = ".probation";
 pub async fn read_token_hash() -> Result<Vec<u8>, AgentError> {
     read_token_hash_from(executable_dir()?.join(TOKEN_HASH_FILE)).await
