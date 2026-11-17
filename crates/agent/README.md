@@ -1,7 +1,7 @@
 # fleet-agent
 
-Background service installed on each managed machine (Linux only, systemd unit). It connects out to the
-receiver over TLS and reports on the machine it runs on.
+Background service on each managed machine (Linux only). It connects out to the receiver and reports on the
+machine it runs on.
 
 ## How it runs
 
@@ -19,7 +19,8 @@ receiver over TLS and reports on the machine it runs on.
 3. **Registration** (`registration_process`). The agent starts by telling the receiver where it stands:
    `Registered` (sent with its token hash) if `.token.txt` exists, `AwaitingProbation` if only `.probation` exists,
    otherwise `RegistrationStart`. Every message the agent builds carries the machine's MAC address, read once at start-up
-   (`process/network.rs`: of the physical network cards, the smallest real address; all zeros if there is none). Then it waits for the receiver: `RegistrationVerified` (the answer to `Registered`) ends the step;
+   (`process/network.rs`: of the physical network cards, the smallest real address; all zeros if there is none).
+   Then it waits for the receiver: `RegistrationVerified` (the answer to `Registered`) ends the step;
    `RegistrationReceived` creates `.probation`; `RegistrationAccepted` carries the token hash, which is saved to
    `.token.txt` before `.probation` is removed, and ends the step.
 4. **Session** (`process/session_process.rs`). A heartbeat task sends a packet every `heart_beat_interval` with the

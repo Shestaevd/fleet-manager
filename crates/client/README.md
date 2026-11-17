@@ -1,6 +1,6 @@
 # fleet-client
 
-Operator CLI.
+Operator CLI for managing agents through the receiver. Not implemented yet.
 
 Planned commands:
 - List connected agents
