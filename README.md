@@ -19,8 +19,8 @@ the receiver. Agents trust only the receiver's pinned certificate.
 | [`fleet-receiver`](crates/receiver/README.md) | In-memory broker routing operator requests to agents |
 | [`fleet-client`](crates/client/README.md) | Operator CLI |
 | [`fleet-protocol`](crates/protocol/README.md) | Packet format and message types shared by all three |
-| [`fleet-crypto`](crates/crypto/README.md) | Certificates and secrets |
-| `fleet-util` | File helpers shared by the agent and the receiver | done |
+| [`fleet-crypto`](crates/crypto/README.md) | Certificates, secrets, token and password hashing |
+| `fleet-util` | File helpers shared by the agent and the receiver |
 | `fleet-config` | Reads TOML config files that sit next to the binary |
 | `fleet-model` | Shared ids and error types |
 
