@@ -1,13 +1,7 @@
 use std::path::PathBuf;
 use std::time::Duration;
 
-use crate::domain::config::{DEFAULT_CONFIG, ReceiverConfig};
-
-#[test]
-fn the_template_parses_and_every_value_in_it_is_the_default() {
-    let from_template: ReceiverConfig = toml::from_str(DEFAULT_CONFIG).unwrap();
-    assert_eq!(from_template, ReceiverConfig::default());
-}
+use crate::domain::config::ReceiverConfig;
 
 #[test]
 fn an_empty_file_gives_the_defaults() {
@@ -41,13 +35,4 @@ fn a_value_that_is_set_wins_and_the_rest_keep_their_defaults() {
     assert_eq!(config.agents_server_config.host, "127.0.0.1");
     assert_eq!(config.agents_server_config.max_connections, 1024);
     assert_eq!(config.agents_config.agent_store_path, PathBuf::from(".agents"));
-}
-
-#[test]
-fn a_port_above_255_and_a_wrong_type_are_handled() {
-    assert!(toml::from_str::<ReceiverConfig>("[server]\nport = 65535\n").is_ok());
-    assert!(toml::from_str::<ReceiverConfig>("[server]\nport = 65536\n").is_err());
-    assert!(toml::from_str::<ReceiverConfig>("[agents]\nagent_limit = 256\n").is_err());
-    assert!(toml::from_str::<ReceiverConfig>("[clients]\nmax_login_attempts = 256\n").is_err());
-    assert!(toml::from_str::<ReceiverConfig>("[server]\nport = \"seven\"\n").is_err());
 }

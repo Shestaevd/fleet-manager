@@ -14,7 +14,6 @@ use tokio_rustls::TlsAcceptor;
 use tokio_rustls::server::TlsStream;
 
 use crate::domain::config::ServerConfig;
-use crate::domain::model::Shared;
 
 pub type Reader = ReadHalf<TlsStream<TcpStream>>;
 pub type Writer = WriteHalf<TlsStream<TcpStream>>;
